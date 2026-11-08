@@ -1,0 +1,14 @@
+# SHA256 (Inhalt ab Zeile 2, d.h. dieser Datei ohne diese erste Zeile): 750cfecdc26d1eeb75ba70d4f89aa5f88564872c8a2d663e20dc2cce41278daf
+# Beispiel: Meldung, wenn eine Kamera-Batterie niedrig wird.
+# Voraussetzung: Experimentell-Funktion "events" ist eingeschaltet.
+alias: Reolink Batterie niedrig
+description: Sendet eine Nachricht, wenn Reolink Manager eine niedrige Batterie meldet.
+triggers:
+  - trigger: event
+    event_type: reolink_manager_battery_low
+actions:
+  - action: notify.notify
+    data:
+      title: "Kamera-Batterie niedrig"
+      message: "{{ trigger.event.data.name }}: {{ trigger.event.data.battery }} %"
+mode: queued

@@ -1,0 +1,14 @@
+# SHA256 (Inhalt ab Zeile 2, d.h. dieser Datei ohne diese erste Zeile): e0664f7e3b1137faf9f0e4faa7675790f55ff9ed0925c8107b7acd4601c71a29
+# Beispiel: Meldung, wenn eine Kamera offline geht (nach der eingestellten Verzögerung).
+# Voraussetzung: Experimentell-Funktion "events" ist eingeschaltet.
+alias: Reolink Kamera offline
+description: Sendet eine Nachricht, wenn Reolink Manager ein Gerät als offline meldet.
+triggers:
+  - trigger: event
+    event_type: reolink_manager_device_offline
+actions:
+  - action: notify.notify
+    data:
+      title: "Kamera offline"
+      message: "{{ trigger.event.data.name }} ({{ trigger.event.data.model }}) ist offline."
+mode: queued

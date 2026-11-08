@@ -1,0 +1,10 @@
+# SHA256 (Inhalt ab Zeile 2, d.h. dieser Datei ohne diese erste Zeile): d3344ec8b46182b48fb244b437cc5ec50c428bb46c88ac893065c4128bc3468c
+# Beispiel: Karte mit Standardwerten. Experimentelle Funktionen müssen zusätzlich
+# in den Optionen der Integration eingeschaltet sein (siehe EXPERIMENTELL.md).
+type: custom:reolink-manager-card
+title: Reolink Manager
+show_experimental: true
+default_tab: cameras
+zoom: 100
+max_rows: 50
+read_only: false

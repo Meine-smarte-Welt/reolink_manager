@@ -1,0 +1,16 @@
+{
+  "entity": {
+    "sensor": {
+      "devices": {"default": "mdi:cctv"},
+      "offline": {"default": "mdi:lan-disconnect"},
+      "battery_low": {"default": "mdi:battery-alert-variant-outline"},
+      "battery_critical": {"default": "mdi:battery-alert"},
+      "updates": {"default": "mdi:update"}
+    }
+  },
+  "services": {
+    "rescan": {"service": "mdi:magnify-scan"},
+    "check_update": {"service": "mdi:github"},
+    "refresh_device": {"service": "mdi:sync"}
+  }
+}

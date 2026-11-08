@@ -1,0 +1,129 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Reolink Manager einrichten",
+        "description": "Wähle die Einträge der offiziellen Reolink-Integration (zum Beispiel deinen Home Hub), die der Reolink Manager verwalten soll. Der Manager liest nur, was Home Assistant bereits von Reolink kennt, und spricht nie selbst mit den Kameras.",
+        "data": {
+          "reolink_entries": "Reolink-Einträge"
+        },
+        "data_description": {
+          "reolink_entries": "Jeder Home Hub, NVR oder jede direkt verbundene Kamera ist ein eigener Eintrag."
+        }
+      },
+      "reconfigure": {
+        "title": "Reolink-Einträge ändern",
+        "description": "Wähle, welche Einträge der Reolink-Integration der Reolink Manager verwalten soll.",
+        "data": {
+          "reolink_entries": "Reolink-Einträge"
+        },
+        "data_description": {
+          "reolink_entries": "Jeder Home Hub, NVR oder jede direkt verbundene Kamera ist ein eigener Eintrag."
+        }
+      }
+    },
+    "error": {
+      "no_selection": "Wähle mindestens einen Reolink-Eintrag."
+    },
+    "abort": {
+      "no_reolink": "Die offizielle Reolink-Integration ist nicht eingerichtet. Richte zuerst Reolink ein.",
+      "single_instance_allowed": "Der Reolink Manager ist bereits eingerichtet.",
+      "reconfigure_successful": "Die Auswahl wurde gespeichert."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Reolink Manager",
+        "description": "Installierte Version: {version}\n{update_info}",
+        "data": {
+          "devices": "Kameras und Geräte",
+          "detection_types": "Angezeigte Erkennungsarten",
+          "battery_low": "Batterie niedrig ab (%)",
+          "battery_critical": "Batterie kritisch ab (%)",
+          "offline_delay": "Offline-Meldung nach (Sekunden)",
+          "events_enabled": "Ereignisse senden",
+          "experimental_enabled": "Experimentelle Funktionen anzeigen",
+          "experimental_features": "Experimentelle Funktionen"
+        },
+        "data_description": {
+          "devices": "Leer lassen, um alle Geräte der gewählten Reolink-Einträge zu verwalten.",
+          "detection_types": "Nur diese Erkennungen erscheinen in der Karte.",
+          "battery_low": "Ab diesem Stand gilt die Batterie als niedrig.",
+          "battery_critical": "Ab diesem Stand gilt die Batterie als kritisch (höchstens so hoch wie „niedrig“).",
+          "offline_delay": "Akku-Kameras melden sich manchmal kurz ab. Das Ereignis „offline“ kommt erst nach dieser Zeit. 0 = sofort.",
+          "events_enabled": "Sendet Home-Assistant-Ereignisse wie reolink_manager_device_offline (nur mit der experimentellen Funktion „Ereignisse“).",
+          "experimental_enabled": "Hauptschalter. Experimentelle Funktionen sind ungeprüft und ohne ihn komplett ausgeblendet.",
+          "experimental_features": "Nur wirksam, wenn der Hauptschalter an ist. Wähle gezielt, was du testen willst."
+        }
+      }
+    },
+    "error": {
+      "critical_above_low": "„Kritisch“ darf nicht höher sein als „niedrig“."
+    }
+  },
+  "selector": {
+    "detection_types": {
+      "options": {
+        "motion": "Bewegung",
+        "person": "Person",
+        "vehicle": "Fahrzeug",
+        "pet": "Haustier",
+        "animal": "Tier",
+        "face": "Gesicht",
+        "package": "Paket",
+        "visitor": "Besucher (Klingel)",
+        "baby_cry": "Babyschreien",
+        "bicycle": "Fahrrad"
+      }
+    },
+    "experimental_features": {
+      "options": {
+        "overview": "Übersicht: Kameras, Batterie, Erkennungen, Updates, Speicher, Hub (nur Lesen)",
+        "sensors": "Übersichts-Sensoren",
+        "events": "Home-Assistant-Ereignisse",
+        "controls": "Steuerung: Schalter und Auswahlfelder (schreibt)",
+        "ptz": "PTZ-Steuerung (schreibt)",
+        "refresh": "Kamera aktualisieren und wecken (schreibt)"
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "devices": {"name": "Geräte"},
+      "offline": {"name": "Offline"},
+      "battery_low": {"name": "Batterie niedrig"},
+      "battery_critical": {"name": "Batterie kritisch"},
+      "updates": {"name": "Updates verfügbar"}
+    }
+  },
+  "services": {
+    "rescan": {
+      "name": "Geräte neu einlesen",
+      "description": "Liest Geräte und Entitäten der Reolink-Integration neu ein.",
+      "fields": {
+        "entry_id": {"name": "Eintrag", "description": "Eintrags-ID des Reolink Managers (optional)."}
+      }
+    },
+    "check_update": {
+      "name": "Auf neue Version prüfen",
+      "description": "Fragt GitHub nach einer neueren Version des Reolink Managers.",
+      "fields": {
+        "entry_id": {"name": "Eintrag", "description": "Eintrags-ID des Reolink Managers (optional)."}
+      }
+    },
+    "refresh_device": {
+      "name": "Kamera aktualisieren",
+      "description": "Löst ein vollständiges Update der Reolink-Entitäten aus. Das weckt Akku-Kameras und verbraucht Batterie. Experimentell.",
+      "fields": {
+        "device_id": {"name": "Gerät", "description": "Reolink-Gerät, das aktualisiert werden soll."},
+        "entry_id": {"name": "Eintrag", "description": "Eintrags-ID des Reolink Managers (optional)."}
+      }
+    }
+  },
+  "exceptions": {
+    "no_entry": {"message": "Der Reolink Manager ist nicht geladen."},
+    "experimental_disabled": {"message": "Diese Funktion ist experimentell und nicht aktiviert."},
+    "unknown_device": {"message": "Das Gerät wird vom Reolink Manager nicht verwaltet."}
+  }
+}

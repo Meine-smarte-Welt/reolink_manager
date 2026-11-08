@@ -1,0 +1,129 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Reolink Manager instellen",
+        "description": "Kies de items van de officiële Reolink-integratie (bijvoorbeeld je Home Hub) die Reolink Manager moet beheren. De manager leest alleen wat Home Assistant al van Reolink kent en praat nooit zelf met de camera's.",
+        "data": {
+          "reolink_entries": "Reolink-items"
+        },
+        "data_description": {
+          "reolink_entries": "Elke Home Hub, NVR of direct verbonden camera is een eigen item."
+        }
+      },
+      "reconfigure": {
+        "title": "Reolink-items wijzigen",
+        "description": "Kies welke items van de Reolink-integratie Reolink Manager moet beheren.",
+        "data": {
+          "reolink_entries": "Reolink-items"
+        },
+        "data_description": {
+          "reolink_entries": "Elke Home Hub, NVR of direct verbonden camera is een eigen item."
+        }
+      }
+    },
+    "error": {
+      "no_selection": "Kies minstens één Reolink-item."
+    },
+    "abort": {
+      "no_reolink": "De officiële Reolink-integratie is niet ingesteld. Stel eerst Reolink in.",
+      "single_instance_allowed": "Reolink Manager is al ingesteld.",
+      "reconfigure_successful": "De selectie is opgeslagen."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Reolink Manager",
+        "description": "Geïnstalleerde versie: {version}\n{update_info}",
+        "data": {
+          "devices": "Camera's en apparaten",
+          "detection_types": "Getoonde detectiesoorten",
+          "battery_low": "Batterij laag vanaf (%)",
+          "battery_critical": "Batterij kritiek vanaf (%)",
+          "offline_delay": "Offline-melding na (seconden)",
+          "events_enabled": "Gebeurtenissen verzenden",
+          "experimental_enabled": "Experimentele functies tonen",
+          "experimental_features": "Experimentele functies"
+        },
+        "data_description": {
+          "devices": "Leeg laten om alle apparaten van de gekozen Reolink-items te beheren.",
+          "detection_types": "Alleen deze detecties verschijnen in de kaart.",
+          "battery_low": "Vanaf dit niveau geldt de batterij als laag.",
+          "battery_critical": "Vanaf dit niveau geldt de batterij als kritiek (hoogstens zo hoog als \"laag\").",
+          "offline_delay": "Accu-camera's haken soms kort af. De gebeurtenis \"offline\" komt pas na deze tijd. 0 = direct.",
+          "events_enabled": "Stuurt Home Assistant-gebeurtenissen zoals reolink_manager_device_offline (alleen met de experimentele functie \"Gebeurtenissen\").",
+          "experimental_enabled": "Hoofdschakelaar. Experimentele functies zijn ongetest en zonder hem volledig verborgen.",
+          "experimental_features": "Alleen actief als de hoofdschakelaar aan staat. Kies gericht wat je wilt testen."
+        }
+      }
+    },
+    "error": {
+      "critical_above_low": "\"Kritiek\" mag niet hoger zijn dan \"laag\"."
+    }
+  },
+  "selector": {
+    "detection_types": {
+      "options": {
+        "motion": "Beweging",
+        "person": "Persoon",
+        "vehicle": "Voertuig",
+        "pet": "Huisdier",
+        "animal": "Dier",
+        "face": "Gezicht",
+        "package": "Pakket",
+        "visitor": "Bezoeker (deurbel)",
+        "baby_cry": "Babygehuil",
+        "bicycle": "Fiets"
+      }
+    },
+    "experimental_features": {
+      "options": {
+        "overview": "Overzicht: camera's, batterij, detecties, updates, opslag, hub (alleen lezen)",
+        "sensors": "Overzichtssensoren",
+        "events": "Home Assistant-gebeurtenissen",
+        "controls": "Bediening: schakelaars en keuzelijsten (schrijft)",
+        "ptz": "PTZ-bediening (schrijft)",
+        "refresh": "Camera verversen en wekken (schrijft)"
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "devices": {"name": "Apparaten"},
+      "offline": {"name": "Offline"},
+      "battery_low": {"name": "Batterij laag"},
+      "battery_critical": {"name": "Batterij kritiek"},
+      "updates": {"name": "Updates beschikbaar"}
+    }
+  },
+  "services": {
+    "rescan": {
+      "name": "Apparaten opnieuw inlezen",
+      "description": "Leest apparaten en entiteiten van de Reolink-integratie opnieuw in.",
+      "fields": {
+        "entry_id": {"name": "Item", "description": "Item-ID van Reolink Manager (optioneel)."}
+      }
+    },
+    "check_update": {
+      "name": "Op nieuwe versie controleren",
+      "description": "Vraagt GitHub naar een nieuwere versie van Reolink Manager.",
+      "fields": {
+        "entry_id": {"name": "Item", "description": "Item-ID van Reolink Manager (optioneel)."}
+      }
+    },
+    "refresh_device": {
+      "name": "Camera verversen",
+      "description": "Start een volledige update van de Reolink-entiteiten. Dit wekt accu-camera's en kost batterij. Experimenteel.",
+      "fields": {
+        "device_id": {"name": "Apparaat", "description": "Reolink-apparaat dat ververst moet worden."},
+        "entry_id": {"name": "Item", "description": "Item-ID van Reolink Manager (optioneel)."}
+      }
+    }
+  },
+  "exceptions": {
+    "no_entry": {"message": "Reolink Manager is niet geladen."},
+    "experimental_disabled": {"message": "Deze functie is experimenteel en niet ingeschakeld."},
+    "unknown_device": {"message": "Het apparaat wordt niet door Reolink Manager beheerd."}
+  }
+}

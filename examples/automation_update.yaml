@@ -1,0 +1,16 @@
+# SHA256 (Inhalt ab Zeile 2, d.h. dieser Datei ohne diese erste Zeile): a58a3057bc092bb27232f20a7403672277a5f49843636ce02f6f7cd11d710a1c
+# Beispiel: Hinweis, wenn für ein Gerät ein Firmware-Update bereitsteht.
+# Voraussetzung: Experimentell-Funktion "events" ist eingeschaltet.
+alias: Reolink Firmware-Update verfügbar
+description: Sendet eine Nachricht, wenn die Reolink-Integration ein Firmware-Update meldet.
+triggers:
+  - trigger: event
+    event_type: reolink_manager_update_available
+actions:
+  - action: notify.notify
+    data:
+      title: "Reolink Firmware-Update"
+      message: >-
+        {{ trigger.event.data.name }}: {{ trigger.event.data.installed_version }}
+        → {{ trigger.event.data.latest_version }}
+mode: queued

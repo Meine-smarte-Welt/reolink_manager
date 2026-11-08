@@ -1,0 +1,26 @@
+# SHA256 (Inhalt ab Zeile 2, d.h. dieser Datei ohne diese erste Zeile): 4cac455690d76917f7e687613bd43dd1fd98e5c4beb77f588de0c2b9db989d36
+rescan:
+  fields:
+    entry_id:
+      required: false
+      selector:
+        text:
+
+check_update:
+  fields:
+    entry_id:
+      required: false
+      selector:
+        text:
+
+refresh_device:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: reolink
+    entry_id:
+      required: false
+      selector:
+        text:

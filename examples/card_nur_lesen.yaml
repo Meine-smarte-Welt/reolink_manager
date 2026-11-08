@@ -1,0 +1,10 @@
+# SHA256 (Inhalt ab Zeile 2, d.h. dieser Datei ohne diese erste Zeile): ae41eca71dc86d7e4df895184a90933de36a2762392addead5a39555d8349411
+# Beispiel: reine Anzeige für Familienmitglieder (keine Bedienelemente).
+type: custom:reolink-manager-card
+title: Kameras
+show_experimental: true
+read_only: true
+show_controls: false
+show_hub: false
+color_warning: "#ed8c2a"
+color_success: "#3b6642"
