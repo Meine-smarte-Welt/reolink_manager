@@ -11,7 +11,7 @@ Reolink Manager is een aanvulling voor Home Assistant. Het legt zich over de **o
 
 De manager leest alleen de apparaten, entiteiten en statussen die de Reolink-integratie al levert. Hij praat **zelf niet met de camera's**. Daardoor worden accu-camera's (bijv. Argus) niet extra gewekt.
 
-> **Belangrijk, versie 0.0.2:** Thorsten heeft overzicht, sensoren en gebeurtenissen met 0.0.1 op zijn installatie bevestigd; ze zijn nu **altijd actief**. Nieuw zijn live-beeld, galerij en pushmeldingen. Net als bediening, PTZ en verversen/wekken zijn ze **ongetest** en standaard **verborgen** (zie [Experimentele functies](#experimentele-functies)). De nieuwe functies zijn nog niet met echte camera's of smartphones getest. Details in [EXPERIMENTELL.md](EXPERIMENTELL.md) (Duits).
+> **Belangrijk, versie 0.0.3:** Thorsten heeft overzicht, sensoren en gebeurtenissen met 0.0.1 op zijn installatie bevestigd; ze zijn nu **altijd actief**. Nieuw zijn live-beeld, galerij en pushmeldingen. Net als bediening, PTZ en verversen/wekken zijn ze **ongetest** en standaard **verborgen** (zie [Experimentele functies](#experimentele-functies)). De nieuwe functies zijn nog niet met echte camera's of smartphones getest. Details in [EXPERIMENTELL.md](EXPERIMENTELL.md) (Duits).
 
 ## Functies
 
@@ -31,11 +31,18 @@ Altijd actief (bevestigd): de categorieën hierboven, overzichtssensoren (`senso
 
 Experimenteel: live-beeld in de popup (`live`), galerij (`gallery`), pushmeldingen met beeld bij detectie (`push`), PTZ-bediening (`ptz`), verversen/wekken (`refresh`) en bediening (`controls`).
 
-De camera-popup heeft nu een zichtbare schuifbalk. Met `live` toont hij bovenaan meteen een stilstaand beeld; een knop start de livestream en een klik op de PTZ-bediening schakelt automatisch naar de stream.
+De camera-popup heeft nu een zichtbare schuifbalk. Met `live` toont hij bovenaan meteen een stilstaand beeld; een knop start de livestream en het indrukken van de PTZ-bediening schakelt automatisch naar de stream. De PTZ-pijlen bewegen de camera alleen zolang je ze ingedrukt houdt; de snelheid kies je boven het kruis.
 
 De apparaatselectie in de opties bepaalt welke camera's, hubs en gongs helemaal verschijnen. Elke categorie heeft in de kaart een eigen schakelaar.
 
-## Nieuw in 0.0.2
+## Nieuw in 0.0.3
+
+- PTZ: de camera beweegt alleen zolang je een pijl ingedrukt houdt. Loslaten stopt de camera, kort tikken beweegt hem maar een klein stukje. Er is een snelheid (langzaam, gemiddeld, snel) en een veiligheidsstop na 8 seconden
+- Push-instellingen (smartphones, detecties, blokkeertijd) staan nu in de kaart onder *Instellingen* in plaats van in de opties van de integratie. De keuze werkt direct
+- Een dashboard „Reolink Manager” met de kaart wordt automatisch aangemaakt als de functie `push` aan staat. Tikken op het pushbericht opent het en toont het live-beeld
+- De Lovelace-resource van de kaart wordt nu echt automatisch geregistreerd (in 0.0.2 moest die handmatig worden toegevoegd)
+
+### Eerder in 0.0.2
 
 - Popup: zichtbare schuifbalk, de uitklapmenu's worden niet meer platgedrukt
 - Live-beeld in de popup (`live`): meteen een stilstaand beeld, stream via knop, een PTZ-klik schakelt naar de stream
@@ -62,11 +69,11 @@ Daarna: Instellingen → Apparaten en diensten → Integratie toevoegen → **Re
 
 1. Kies de Reolink-items die de manager moet bekijken.
 2. Kies onder *Configureren* de apparaten (leeg = alle), detectiesoorten, batterijdrempels (standaard laag 30 %, kritiek 15 %), offline-vertraging (standaard 120 s) en of gebeurtenissen worden verzonden.
-3. Voor experimentele functies: schakel *Experimentele functies tonen* in en vink de gewenste functies aan. Daarna volgt een tweede stap met de instellingen voor galerij en push.
+3. Voor experimentele functies: schakel *Experimentele functies tonen* in en vink de gewenste functies aan. Daarna volgt een tweede stap met de instelling voor de galerij.
 4. **Galerij:** aantal video's per camera (standaard 5). De kaart laadt pas bij het uitklappen en gebruikt de lage resolutie.
-5. **Push:** smartphones (`notify.mobile_app_…`, meerdere mogelijk), detectiesoorten (standaard persoon), blokkeertijd (standaard 60 s) en het dashboardpad van de kaart, bijv. `/lovelace/camera`. Een tik op het bericht opent dat dashboard en de kaart opent het live-beeld van de camera. In het tandwiel staat een testbericht.
+5. **Push:** schakel de functie `push` in. Kies smartphones (`notify.mobile_app_…`, meerdere mogelijk), detectiesoorten (standaard persoon) en blokkeertijd (standaard 60 s) in de kaart onder *Instellingen* → *Pushmeldingen*, daar staat ook een testbericht. De integratie maakt het dashboard „Reolink Manager” met de kaart zelf aan (alleen als Lovelace in opslagmodus draait). Een tik op het bericht opent het en de kaart toont het live-beeld van de camera.
 
-De kaart wordt automatisch als Lovelace-resource geregistreerd (in YAML-modus moet `/reolink_manager_files/reolink-manager-card.js?v=0.0.2` handmatig als module-resource worden toegevoegd).
+De kaart wordt automatisch als Lovelace-resource geregistreerd (in YAML-modus moet `/reolink_manager_files/reolink-manager-card.js?v=0.0.3` handmatig als module-resource worden toegevoegd).
 
 ## De kaart
 
@@ -149,6 +156,8 @@ In 0.0.2 zijn live-beeld, galerij, push, bediening, PTZ en verversen/wekken onge
 ## Bekende beperkingen
 
 - **Nieuwe functies niet op echte hardware getest.** Overzicht, sensoren en gebeurtenissen heeft Thorsten met 0.0.1 bevestigd. Alles nieuws is alleen getest tegen echte Home Assistant-klassen met gesimuleerde Reolink-entiteiten en in de browser met testgegevens; push niet op echte smartphones.
+- PTZ-snelheid: werkt alleen als de Reolink-integratie de service `reolink.ptz_move` met snelheid aanbiedt. Anders gebruikt de camera zijn eigen snelheid; ingedrukt houden en loslaten werken nog steeds.
+- Het dashboard wordt alleen automatisch aangemaakt als Lovelace in opslagmodus draait. In YAML-modus maak je zelf een dashboard met de kaart.
 - De Reolink-integratie levert **geen voorbeeldbeelden** voor opnames. De galerij toont daarom per camera het actuele camerabeeld (bij accu-camera's alleen op knopdruk) en een lijst met opnames.
 - Of een opname in de browser afspeelt, hangt af van de codec (H.265 werkt niet in elke browser). Gebruik dan „Openen in Home Assistant”.
 - Push: of beeld en tik op iOS en Android hetzelfde werken, is nog open. De companion-app moet meldingen mogen tonen.
@@ -171,7 +180,8 @@ In 0.0.2 zijn live-beeld, galerij, push, bediening, PTZ en verversen/wekken onge
 
 | Versie | Wijziging |
 |---|---|
-| **0.0.2** | Popup met schuifbalk, live-beeld, galerij, pushmeldingen. Overzicht, sensoren, gebeurtenissen bevestigd en altijd actief. |
+| **0.0.3** | PTZ alleen bij ingedrukte knop met snelheid, push-instellingen in de kaart, dashboard en Lovelace-resource automatisch. |
+| 0.0.2 | Popup met schuifbalk, live-beeld, galerij, pushmeldingen. Overzicht, sensoren, gebeurtenissen bevestigd en altijd actief. |
 | 0.0.1 | Eerste release. Alles experimenteel. |
 
 ## Bestandsintegriteit
@@ -182,11 +192,11 @@ Python-, JavaScript- en YAML-bestanden hebben op de eerste regel een SHA-256-has
 |---|---|
 | `hacs.json` | `4e05738d8be8aa023f7d922544ed51f3aefbd0bb5fe89f9b7573e637c505d5ad` |
 | `custom_components/reolink_manager/icons.json` | `b67ca9f86968bb7b07e93637b107963721a319cbc429b4c3bc4c9a9bc039f49a` |
-| `custom_components/reolink_manager/manifest.json` | `50228b60a216612f0bd8cef69fa8856084cd42aa6e8a3925147efae67a109dab` |
-| `custom_components/reolink_manager/strings.json` | `2c05a417e0253758b2698470833ea0545472d5b05c08afde707993709c65ac17` |
-| `custom_components/reolink_manager/translations/de.json` | `2c05a417e0253758b2698470833ea0545472d5b05c08afde707993709c65ac17` |
-| `custom_components/reolink_manager/translations/en.json` | `54d3cf5665d03ee599607d06613d8d94610f167ba2cc23508fb852bc70da7c5b` |
-| `custom_components/reolink_manager/translations/nl.json` | `500de58bc94c634e79ee860ae55aa1d3796acf21a77f2a77d2d48f10193f25cb` |
+| `custom_components/reolink_manager/manifest.json` | `f3ae5cc2b8e5f3b8996e7ba90bc5593727646fc8b648c5e5855245c14247874a` |
+| `custom_components/reolink_manager/strings.json` | `c5bd5662f23bd549b4cb413a59973fed59ff0881da64471599623e456333f64c` |
+| `custom_components/reolink_manager/translations/de.json` | `c5bd5662f23bd549b4cb413a59973fed59ff0881da64471599623e456333f64c` |
+| `custom_components/reolink_manager/translations/en.json` | `3fb9a5f6fb603bbd670d5cc62ad6965f52fda0326d2168b13533de28cb4cfe32` |
+| `custom_components/reolink_manager/translations/nl.json` | `996e2002b72cf84a76fc8c3ab0bc579befe2f4b7e12fb15754dfa7442bbf639e` |
 
 ## Licentie
 

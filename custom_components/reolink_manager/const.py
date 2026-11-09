@@ -1,10 +1,10 @@
-# SHA256 (Inhalt ab Zeile 2, d.h. dieser Datei ohne diese erste Zeile): 11fc907ab41f9d72fb5a7f5e46af3a7d57a8c11cbcc328730c3e06954256eca1
+# SHA256 (Inhalt ab Zeile 2, d.h. dieser Datei ohne diese erste Zeile): 7fc0bee1e47ce683fb0124e0e7e302b12faa0afc485cd6423ac70e7acc5c18ce
 """Konstanten des Reolink Managers."""
 from __future__ import annotations
 
 DOMAIN = "reolink_manager"
 NAME = "Reolink Manager"
-VERSION = "0.0.2"
+VERSION = "0.0.3"
 GITHUB_REPO = "meine-smarte-welt/reolink_manager"
 GITHUB_URL = f"https://github.com/{GITHUB_REPO}"
 REOLINK_DOMAIN = "reolink"
@@ -61,6 +61,21 @@ EXPERIMENTAL_FEATURES: dict[str, dict[str, str]] = {
     "gallery": {"since": "0.0.2", "icon": "mdi:filmstrip"},
     "push": {"since": "0.0.2", "icon": "mdi:cellphone-message"},
 }
+
+# Automatisch angelegtes Dashboard mit der Karte, Ziel des Tipps auf die Push-Nachricht.
+DASHBOARD_URL_PATH = "reolink-manager"
+DASHBOARD_VIEW_PATH = "kameras"
+DASHBOARD_PUSH_PATH = f"/{DASHBOARD_URL_PATH}/{DASHBOARD_VIEW_PATH}"
+
+# PTZ: Geschwindigkeit 1 bis 64 (Reolink), kürzeste Bewegung, Sicherheits-Stopp
+PTZ_SPEED_MIN = 1
+PTZ_SPEED_MAX = 64
+PTZ_SPEED_DEFAULT = 5
+PTZ_MIN_MOVE_SECONDS = 0.25
+PTZ_FAILSAFE_SECONDS = 8.0
+
+# Optionen, die ohne Neuladen der Integration geändert werden dürfen (Einstellungen in der Karte)
+LIVE_OPTION_KEYS = ("push_targets", "push_detections", "push_cooldown")
 
 GALLERY_MAX_COUNT = 20
 GALLERY_MAX_DAYS = 7

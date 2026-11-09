@@ -57,22 +57,14 @@
       },
       "experimental": {
         "title": "Experimental features",
-        "description": "These features are untested. Pick what you want to test. Live view and gallery can wake battery cameras.",
+        "description": "These features are untested. Pick what you want to test. Live view and gallery can wake battery cameras. Choose the smartphones for push notifications in the card under Settings.",
         "data": {
           "experimental_features": "Experimental features",
-          "gallery_count": "Number of gallery videos per camera",
-          "push_targets": "Smartphones for push notifications",
-          "push_detections": "Detections that trigger a push notification",
-          "push_cooldown": "Lock time per camera and detection (seconds)",
-          "push_path": "Dashboard path for tapping the notification"
+          "gallery_count": "Number of gallery videos per camera"
         },
         "data_description": {
           "experimental_features": "Only effective when the master switch is on.",
-          "gallery_count": "The newest recordings in low resolution are loaded (1 to 20).",
-          "push_targets": "Mobile app services (notify.mobile_app_…). Several possible. Empty = no push notifications. Effective with the \"Push\" feature.",
-          "push_detections": "Only these detection types send a message.",
-          "push_cooldown": "Within this time the same camera sends no second message for the same detection. 0 = no lock.",
-          "push_path": "Dashboard containing the card, e.g. /lovelace/cameras. Tapping the notification opens the camera's live view there."
+          "gallery_count": "The newest recordings in low resolution are loaded (1 to 20)."
         }
       }
     },

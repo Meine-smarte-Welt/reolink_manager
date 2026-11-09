@@ -57,22 +57,14 @@
       },
       "experimental": {
         "title": "Experimentelle Funktionen",
-        "description": "Diese Funktionen sind ungeprüft. Wähle gezielt, was du testen willst. Live-Bild und Galerie können Akku-Kameras wecken.",
+        "description": "Diese Funktionen sind ungeprüft. Wähle gezielt, was du testen willst. Live-Bild und Galerie können Akku-Kameras wecken. Die Smartphones für Push-Nachrichten wählst du in der Karte unter Einstellungen.",
         "data": {
           "experimental_features": "Experimentelle Funktionen",
-          "gallery_count": "Anzahl Galerie-Videos pro Kamera",
-          "push_targets": "Smartphones für Push-Nachrichten",
-          "push_detections": "Erkennungen, die eine Push-Nachricht auslösen",
-          "push_cooldown": "Sperrzeit pro Kamera und Erkennung (Sekunden)",
-          "push_path": "Dashboard-Pfad für den Tipp auf die Nachricht"
+          "gallery_count": "Anzahl Galerie-Videos pro Kamera"
         },
         "data_description": {
           "experimental_features": "Nur wirksam, wenn der Hauptschalter an ist.",
-          "gallery_count": "Es werden die neuesten Aufnahmen in niedriger Auflösung geladen (1 bis 20).",
-          "push_targets": "Mobile-App-Dienste (notify.mobile_app_…). Mehrere möglich. Leer = keine Push-Nachrichten. Wirksam mit der Funktion „Push“.",
-          "push_detections": "Nur diese Erkennungsarten senden eine Nachricht.",
-          "push_cooldown": "Innerhalb dieser Zeit sendet dieselbe Kamera für dieselbe Erkennung keine zweite Nachricht. 0 = keine Sperre.",
-          "push_path": "Dashboard mit der Karte, z. B. /lovelace/kameras. Der Tipp auf die Nachricht öffnet dort das Live-Bild der Kamera."
+          "gallery_count": "Es werden die neuesten Aufnahmen in niedriger Auflösung geladen (1 bis 20)."
         }
       }
     },

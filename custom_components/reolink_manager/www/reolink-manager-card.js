@@ -1,6 +1,6 @@
-// SHA256 (Inhalt ab Zeile 2, d.h. dieser Datei ohne diese erste Zeile): 500eccfd8dd111a0767816143b6dfcba20d2d38e0514600212b3f7d244bafc41
+// SHA256 (Inhalt ab Zeile 2, d.h. dieser Datei ohne diese erste Zeile): 07668a772465f7053d3828206a72241e0e6ccdd2d8abc3173e852fd753232184
 /* Reolink Manager – Karte für Home Assistant (Meine smarte Welt) */
-const CARD_VERSION = "0.0.2";
+const CARD_VERSION = "0.0.3";
 const TAG = "reolink-manager-card";
 const WS = "reolink_manager";
 
@@ -22,6 +22,7 @@ const DET_ICON = {
   animal: "mdi:dog-side", face: "mdi:face-recognition", package: "mdi:package-variant-closed",
   visitor: "mdi:doorbell", baby_cry: "mdi:baby-face-outline", bicycle: "mdi:bike",
 };
+const PTZ_SPEEDS = { slow: 5, mid: 15, fast: 32 };
 const KIND_ICON = { camera: "mdi:cctv", hub: "mdi:router-wireless", chime: "mdi:bell-ring" };
 const EXP_ICON = {
   controls: "mdi:tune-variant", ptz: "mdi:pan", refresh: "mdi:sync",
@@ -87,7 +88,7 @@ const I18N = {
     open_device: "Gerät öffnen", open_entity: "Details", copy: "Kopieren", copied: "Kopiert",
     loading: "Lade …", no_details: "Details sind nur für Administratoren verfügbar.",
     ptz_stop: "Stopp", ptz_zoom_in: "Zoom +", ptz_zoom_out: "Zoom −", ptz_preset: "Position",
-    ptz_hint: "Die Pfeile bewegen die Kamera, bis du „Stopp“ drückst.",
+    ptz_hint: "Halte einen Pfeil gedrückt, solange sich die Kamera bewegen soll. Loslassen hält sie an. Ein kurzes Tippen bewegt sie nur ein kleines Stück.",
     refresh_btn: "Jetzt aktualisieren", refresh_confirm: "Wirklich? Das weckt die Kamera.",
     refresh_hint: "Löst ein vollständiges Update der Reolink-Entitäten aus. Eine Akku-Kamera wird dabei geweckt und verbraucht Batterie.",
     siren_on: "Sirene an", siren_off: "Sirene aus", siren_confirm: "Wirklich? Laute Sirene!",
@@ -142,7 +143,12 @@ const I18N = {
     err_gallery_failed: "Aufnahmen konnten nicht geladen werden", err_gallery_unavailable: "Für diese Kamera gibt es keine Aufnahmen (keine SD-Karte oder Wiedergabe nicht unterstützt)", err_no_push_target: "Kein Smartphone ausgewählt",
     acc_push: "Push-Nachrichten", push_targets: "Smartphones", push_detections: "Erkennungen", push_cooldown: "Sperrzeit", push_path: "Dashboard-Pfad",
     push_test: "Test-Nachricht senden", push_test_hint: "Sendet eine Nachricht mit aktuellem Bild an die gewählten Smartphones. Der Tipp darauf öffnet das Live-Bild.",
-    push_none: "Kein Smartphone gewählt. Auswahl unter Konfigurieren → Experimentelle Funktionen.", opt_gallery_count: "Galerie-Videos pro Kamera",
+    push_none: "Kein Smartphone gewählt. Wähle unten eines aus.", opt_gallery_count: "Galerie-Videos pro Kamera",
+    ptz_speed: "Geschwindigkeit", ptz_speed_slow: "Langsam", ptz_speed_mid: "Mittel", ptz_speed_fast: "Schnell",
+    push_select_hint: "Wähle die Smartphones, die eine Nachricht mit aktuellem Bild bekommen. Sie stammen aus der Companion-App (notify.mobile_app_…).",
+    push_no_app: "Kein Smartphone gefunden. Installiere die Home-Assistant-App und erlaube Benachrichtigungen.", push_gone: "nicht mehr vorhanden",
+    push_saved: "Push-Einstellungen gespeichert", push_path_auto: "automatisch (Dashboard „Reolink Manager“)", push_det_hint: "Bei welchen Erkennungen soll eine Nachricht kommen?",
+    push_cooldown_hint: "Sekunden, in denen dieselbe Kamera für dieselbe Erkennung keine zweite Nachricht sendet (0 = keine Sperre).",
     push_test_sent: "Test-Nachricht wird gesendet …",
     ed_live_auto: "Standbild beim Öffnen des Popups automatisch laden",
   },
@@ -181,7 +187,7 @@ const I18N = {
     open_device: "Open device", open_entity: "Details", copy: "Copy", copied: "Copied",
     loading: "Loading …", no_details: "Details are only available to administrators.",
     ptz_stop: "Stop", ptz_zoom_in: "Zoom +", ptz_zoom_out: "Zoom −", ptz_preset: "Position",
-    ptz_hint: "The arrows move the camera until you press \"Stop\".",
+    ptz_hint: "Hold an arrow for as long as the camera should move. Releasing it stops the camera. A short tap moves it only a little.",
     refresh_btn: "Refresh now", refresh_confirm: "Sure? This wakes the camera.",
     refresh_hint: "Triggers a full update of the Reolink entities. A battery camera is woken and uses battery.",
     siren_on: "Siren on", siren_off: "Siren off", siren_confirm: "Sure? Loud siren!",
@@ -236,7 +242,12 @@ const I18N = {
     err_gallery_failed: "Recordings could not be loaded", err_gallery_unavailable: "No recordings for this camera (no SD card or playback not supported)", err_no_push_target: "No smartphone selected",
     acc_push: "Push notifications", push_targets: "Smartphones", push_detections: "Detections", push_cooldown: "Lock time", push_path: "Dashboard path",
     push_test: "Send test message", push_test_hint: "Sends a message with the current image to the selected smartphones. Tapping it opens the live view.",
-    push_none: "No smartphone selected. Choose under Configure → Experimental features.", opt_gallery_count: "Gallery videos per camera",
+    push_none: "No smartphone selected. Choose one below.", opt_gallery_count: "Gallery videos per camera",
+    ptz_speed: "Speed", ptz_speed_slow: "Slow", ptz_speed_mid: "Medium", ptz_speed_fast: "Fast",
+    push_select_hint: "Choose the smartphones that get a message with the current image. They come from the companion app (notify.mobile_app_…).",
+    push_no_app: "No smartphone found. Install the Home Assistant app and allow notifications.", push_gone: "no longer available",
+    push_saved: "Push settings saved", push_path_auto: "automatic (dashboard \"Reolink Manager\")", push_det_hint: "Which detections should send a message?",
+    push_cooldown_hint: "Seconds during which the same camera sends no second message for the same detection (0 = no lock).",
     push_test_sent: "Sending test message …",
     ed_live_auto: "Load still image automatically when the popup opens",
   },
@@ -275,7 +286,7 @@ const I18N = {
     open_device: "Apparaat openen", open_entity: "Details", copy: "Kopiëren", copied: "Gekopieerd",
     loading: "Laden …", no_details: "Details zijn alleen beschikbaar voor beheerders.",
     ptz_stop: "Stop", ptz_zoom_in: "Zoom +", ptz_zoom_out: "Zoom −", ptz_preset: "Positie",
-    ptz_hint: "De pijlen bewegen de camera tot je op \"Stop\" drukt.",
+    ptz_hint: "Houd een pijl ingedrukt zolang de camera moet bewegen. Loslaten stopt de camera. Kort tikken beweegt hem maar een klein stukje.",
     refresh_btn: "Nu verversen", refresh_confirm: "Zeker? Dit wekt de camera.",
     refresh_hint: "Start een volledige update van de Reolink-entiteiten. Een accu-camera wordt gewekt en kost batterij.",
     siren_on: "Sirene aan", siren_off: "Sirene uit", siren_confirm: "Zeker? Harde sirene!",
@@ -330,7 +341,12 @@ const I18N = {
     err_gallery_failed: "Opnames konden niet worden geladen", err_gallery_unavailable: "Geen opnames voor deze camera (geen SD-kaart of afspelen niet ondersteund)", err_no_push_target: "Geen smartphone gekozen",
     acc_push: "Pushmeldingen", push_targets: "Smartphones", push_detections: "Detecties", push_cooldown: "Blokkeertijd", push_path: "Dashboardpad",
     push_test: "Testbericht verzenden", push_test_hint: "Verstuurt een bericht met het actuele beeld naar de gekozen smartphones. Tikken erop opent het live-beeld.",
-    push_none: "Geen smartphone gekozen. Kies onder Configureren → Experimentele functies.", opt_gallery_count: "Galerijvideo's per camera",
+    push_none: "Geen smartphone gekozen. Kies er hieronder een.", opt_gallery_count: "Galerijvideo's per camera",
+    ptz_speed: "Snelheid", ptz_speed_slow: "Langzaam", ptz_speed_mid: "Gemiddeld", ptz_speed_fast: "Snel",
+    push_select_hint: "Kies de smartphones die een bericht met het actuele beeld krijgen. Ze komen uit de companion-app (notify.mobile_app_…).",
+    push_no_app: "Geen smartphone gevonden. Installeer de Home Assistant-app en sta meldingen toe.", push_gone: "niet meer beschikbaar",
+    push_saved: "Push-instellingen opgeslagen", push_path_auto: "automatisch (dashboard „Reolink Manager”)", push_det_hint: "Bij welke detecties moet een bericht komen?",
+    push_cooldown_hint: "Seconden waarin dezelfde camera voor dezelfde detectie geen tweede bericht stuurt (0 = geen blokkering).",
     push_test_sent: "Testbericht wordt verzonden …",
     ed_live_auto: "Stilstaand beeld automatisch laden bij openen van de popup",
   },
@@ -453,6 +469,11 @@ ha-card{padding:0 0 12px;overflow:hidden}
 .galthumb img{width:100%;height:100%;object-fit:cover}
 .galthumb ha-icon{--mdc-icon-size:26px;color:var(--rm-rowicon)}
 .player{max-width:720px}
+[data-ptz]{touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.btn.ptz:active{background:var(--rm-tab);border-color:var(--rm-tab);color:#fff}
+.chk{display:flex;align-items:center;gap:8px;padding:4px 0;font-size:.9rem;cursor:pointer}
+.chk input{width:18px;height:18px;accent-color:var(--rm-tab)}
+.chips{display:flex;flex-wrap:wrap;gap:2px 16px}
 .ent{display:flex;gap:8px;align-items:center;padding:4px 0;border-top:1px solid var(--divider-color);font-size:.82rem}
 .ent:first-child{border-top:0}
 .ent .n{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer}
@@ -494,6 +515,21 @@ class ReolinkManagerCard extends HTMLElement {
       else if (this._ui.popup) this._closePopup();
     };
     this._locHandler = () => this._checkDeepLink();
+    this._ptzHeld = null;
+    root.addEventListener("pointerdown", (e) => {
+      const el = e.target.closest && e.target.closest("[data-ptz]");
+      if (!el || (e.button !== undefined && e.button > 0)) return;
+      e.preventDefault();
+      this._ptzDown(el.dataset.ptz);
+    });
+    root.addEventListener("keydown", (e) => {
+      const el = e.target.closest && e.target.closest("[data-ptz]");
+      if (el && (e.key === " " || e.key === "Enter") && !e.repeat) { e.preventDefault(); this._ptzDown(el.dataset.ptz); }
+    });
+    root.addEventListener("keyup", (e) => { if (this._ptzHeld && (e.key === " " || e.key === "Enter")) this._ptzUp(); });
+    root.addEventListener("contextmenu", (e) => { if (e.target.closest && e.target.closest("[data-ptz]")) e.preventDefault(); });
+    this._ptzRelease = () => this._ptzUp();
+    this._ptzVis = () => { if (document.hidden) this._ptzUp(); };
   }
 
   static getConfigElement() { return document.createElement("reolink-manager-card-editor"); }
@@ -519,6 +555,10 @@ class ReolinkManagerCard extends HTMLElement {
     document.addEventListener("keydown", this._keyHandler);
     window.addEventListener("location-changed", this._locHandler);
     window.addEventListener("popstate", this._locHandler);
+    window.addEventListener("pointerup", this._ptzRelease);
+    window.addEventListener("pointercancel", this._ptzRelease);
+    window.addEventListener("blur", this._ptzRelease);
+    document.addEventListener("visibilitychange", this._ptzVis);
     this._timer = setInterval(() => this._tick(), 30000);
     if (this._hass) this._subscribe();
   }
@@ -527,6 +567,11 @@ class ReolinkManagerCard extends HTMLElement {
     document.removeEventListener("keydown", this._keyHandler);
     window.removeEventListener("location-changed", this._locHandler);
     window.removeEventListener("popstate", this._locHandler);
+    window.removeEventListener("pointerup", this._ptzRelease);
+    window.removeEventListener("pointercancel", this._ptzRelease);
+    window.removeEventListener("blur", this._ptzRelease);
+    document.removeEventListener("visibilitychange", this._ptzVis);
+    this._ptzUp();
     clearInterval(this._timer);
     this._closePopup();
     this._closePlayer();
@@ -898,12 +943,22 @@ class ReolinkManagerCard extends HTMLElement {
 
     if (this._exp("push")) {
       const targets = o.push_targets || [];
-      let pb = this._line(t("push_targets"), targets.length ? targets.map((x) => esc(String(x).replace(/^notify\./, ""))).join(", ") : "–") +
-        this._line(t("push_detections"), (o.push_detections || []).map((k) => esc(t(`det_${k}`))).join(", ") || "–") +
-        this._line(t("push_cooldown"), `${o.push_cooldown} s`) + this._line(t("push_path"), esc(o.push_path || "–"));
-      if (!targets.length) pb += `<div class="note warn">${esc(t("push_none"))}</div>`;
+      const sel = new Set(targets);
+      const notify = (this._hass && this._hass.services && this._hass.services.notify) || {};
+      const live = Object.keys(notify).filter((n) => n.startsWith("mobile_app_"));
+      const avail = [...new Set([...(o.push_available || []), ...live, ...targets])].sort();
+      const dis = canAct ? "" : " disabled";
+      const nice = (n) => String(n).replace(/^mobile_app_/, "").replace(/_/g, " ");
+      let pb = `<div class="note">${esc(t("push_select_hint"))}</div>`;
+      if (!avail.length) pb += `<div class="note warn">${esc(t("push_no_app"))}</div>`;
+      pb += avail.map((n) => `<label class="chk"><input type="checkbox" data-role="pushtarget" data-val="${esc(n)}"${sel.has(n) ? " checked" : ""}${dis}><span>${esc(nice(n))}${live.includes(n) || (o.push_available || []).includes(n) ? "" : ` (${esc(t("push_gone"))})`}</span></label>`).join("");
+      if (avail.length && !targets.length) pb += `<div class="note warn">${esc(t("push_none"))}</div>`;
+      const pdet = new Set(o.push_detections || []);
+      pb += `<div class="note">${esc(t("push_det_hint"))}</div><div class="chips">${(o.detection_kinds || Object.keys(DET_ICON)).map((k) => `<label class="chk"><input type="checkbox" data-role="pushdet" data-val="${esc(k)}"${pdet.has(k) ? " checked" : ""}${dis}><span>${esc(t(`det_${k}`))}</span></label>`).join("")}</div>`;
+      pb += `<div class="settings-line"><span class="lbl">${esc(t("push_cooldown"))}</span><input class="sel" style="max-width:35%" type="number" min="0" max="3600" step="5" data-role="pushcd" data-fk="pushcd" value="${esc(o.push_cooldown)}"${dis}></div><div class="note">${esc(t("push_cooldown_hint"))}</div>`;
+      pb += this._line(t("push_path"), esc(t("push_path_auto")));
       if (canAct && targets.length) pb += `<div class="note">${esc(t("push_test_hint"))}</div><div class="btns"><button class="btn" data-act="testpush">${this._ico("mdi:bell-ring-outline")}${esc(t("push_test"))}</button></div>`;
-      h += this._acc("push", "mdi:bell-badge-outline", t("acc_push"), pb, { meta: `<span class="expbadge">${esc(t("badge_experimental"))}</span>` });
+      h += this._acc("push", "mdi:bell-badge-outline", t("acc_push"), pb, { open: !targets.length, meta: `<span class="expbadge">${esc(t("badge_experimental"))}</span>` });
     }
 
     const ex = d.experimental;
@@ -947,6 +1002,7 @@ class ReolinkManagerCard extends HTMLElement {
   }
 
   _closePopup() {
+    this._ptzUp();
     this._ui.popup = null;
     this._ui.confirm = null;
     this._syncPopup();
@@ -1226,17 +1282,44 @@ class ReolinkManagerCard extends HTMLElement {
     this._elOv.textContent = "";
   }
 
+  _ptzSpeedKey() {
+    if (!this._ui.ptzSpeed) {
+      let v = null;
+      try { v = window.localStorage.getItem("reolink_manager_ptz_speed"); } catch (_) { /* ohne Speicher */ }
+      this._ui.ptzSpeed = PTZ_SPEEDS[v] ? v : "slow";
+    }
+    return this._ui.ptzSpeed;
+  }
+
   _ptzHtml(d) {
     const b = d.ptz.buttons || {};
     const t = (k) => this._t(k);
-    const btn = (key, icon, label) => (b[key] ? `<button class="btn" data-act="ptz" data-ent="${esc(b[key])}" title="${esc(label)}">${this._ico(icon)}</button>` : `<button class="btn" disabled>${this._ico(icon)}</button>`);
-    let h = `<div class="pad"><span></span>${btn("up", "mdi:arrow-up", "↑")}<span></span>${btn("left", "mdi:arrow-left", "←")}${btn("stop", "mdi:stop", t("ptz_stop"))}${btn("right", "mdi:arrow-right", "→")}<span></span>${btn("down", "mdi:arrow-down", "↓")}<span></span></div>`;
+    const btn = (key, icon, label) => (b[key] ? `<button class="btn ptz" data-ptz="${esc(b[key])}" title="${esc(label)}">${this._ico(icon)}</button>` : `<button class="btn" disabled>${this._ico(icon)}</button>`);
+    const stop = b.stop ? `<button class="btn" data-act="ptzstop" data-ent="${esc(b.stop)}" title="${esc(t("ptz_stop"))}">${this._ico("mdi:stop")}</button>` : `<button class="btn" disabled>${this._ico("mdi:stop")}</button>`;
+    const cur = this._ptzSpeedKey();
+    let h = `<div class="settings-line"><span class="lbl">${esc(t("ptz_speed"))}</span><select class="sel" style="max-width:55%" data-role="ptzspeed">${Object.keys(PTZ_SPEEDS).map((k) => `<option value="${k}"${k === cur ? " selected" : ""}>${esc(t(`ptz_speed_${k}`))}</option>`).join("")}</select></div>`;
+    h += `<div class="pad"><span></span>${btn("up", "mdi:arrow-up", "↑")}<span></span>${btn("left", "mdi:arrow-left", "←")}${stop}${btn("right", "mdi:arrow-right", "→")}<span></span>${btn("down", "mdi:arrow-down", "↓")}<span></span></div>`;
     if (b.zoom_in || b.zoom_out) h += `<div class="btns" style="justify-content:center">${btn("zoom_out", "mdi:magnify-minus-outline", t("ptz_zoom_out"))}${btn("zoom_in", "mdi:magnify-plus-outline", t("ptz_zoom_in"))}</div>`;
     h += `<div class="note">${esc(t("ptz_hint"))}</div>`;
     if (d.ptz.preset) {
       h += `<div class="settings-line"><span class="lbl">${esc(t("ptz_preset"))}</span><select class="sel" data-role="select" data-ent="${esc(d.ptz.preset.entity)}">${d.ptz.preset.options.map((o) => `<option${o === d.ptz.preset.current ? " selected" : ""}>${esc(o)}</option>`).join("")}</select></div>`;
     }
     return h;
+  }
+
+  /* Bewegung nur solange gehalten wird, Loslassen stoppt (Sicherheits-Stopp zusätzlich im Backend) */
+  _ptzDown(ent) {
+    if (this._ptzHeld || !ent) return;
+    this._ptzHeld = ent;
+    this._action({ action: "ptz", entity: ent, op: "move", value: String(PTZ_SPEEDS[this._ptzSpeedKey()]) });
+    this._livePtzHook();
+  }
+
+  _ptzUp() {
+    const ent = this._ptzHeld;
+    if (!ent) return;
+    this._ptzHeld = null;
+    this._action({ action: "ptz", entity: ent, op: "stop" });
   }
 
   _controlsHtml(d, det) {
@@ -1286,6 +1369,10 @@ class ReolinkManagerCard extends HTMLElement {
   _onChange(e) {
     const el = e.target;
     if (el.dataset.role === "sort") { this._ui.sort = el.value; this._render(); }
+    else if (el.dataset.role === "ptzspeed") {
+      this._ui.ptzSpeed = PTZ_SPEEDS[el.value] ? el.value : "slow";
+      try { window.localStorage.setItem("reolink_manager_ptz_speed", this._ui.ptzSpeed); } catch (_) { /* ohne Speicher */ }
+    } else if (["pushtarget", "pushdet", "pushcd"].includes(el.dataset.role)) this._savePush();
     else if (el.dataset.role === "select" && el.dataset.ent) this._action({ action: "set_entity", entity: el.dataset.ent, op: "select", value: el.value });
   }
 
@@ -1310,7 +1397,7 @@ class ReolinkManagerCard extends HTMLElement {
       case "galsnap": this._loadGallerySnapshot(el.dataset.dev); break;
       case "play": this._openPlayer(el.dataset.id, el.dataset.title); break;
       case "testpush": this._action({ action: "test_push" }); this._showToast(this._t("push_test_sent"), false); break;
-      case "ptz": this._action({ action: "set_entity", entity: el.dataset.ent, op: "press" }); this._livePtzHook(); break;
+      case "ptzstop": this._action({ action: "ptz", entity: el.dataset.ent, op: "stop" }); this._livePtzHook(); break;
       case "toggle": this._action({ action: "set_entity", entity: el.dataset.ent, op: el.dataset.on === "1" ? "turn_on" : "turn_off" }); break;
       case "siren": this._confirm(`siren:${el.dataset.ent}`, () => this._action({ action: "set_entity", entity: el.dataset.ent, op: "turn_on" })); break;
       case "refresh": this._confirm(`refresh:${el.dataset.dev}`, () => this._action({ action: "refresh_device", device: el.dataset.dev })); break;
@@ -1320,6 +1407,24 @@ class ReolinkManagerCard extends HTMLElement {
       case "opendevice": this._navigate(`/config/devices/device/${el.dataset.dev}`); break;
       case "copy": this._copy(el.dataset.copy); break;
       default: break;
+    }
+  }
+
+  async _savePush() {
+    if (!this._hass) return;
+    const r = this._elMain;
+    const targets = [...r.querySelectorAll('[data-role="pushtarget"]:checked')].map((x) => x.dataset.val);
+    const detections = [...r.querySelectorAll('[data-role="pushdet"]:checked')].map((x) => x.dataset.val);
+    const cdEl = r.querySelector('[data-role="pushcd"]');
+    const cooldown = Math.max(0, Math.min(3600, Math.round(Number(cdEl && cdEl.value) || 0)));
+    const msg = { type: `${WS}/set_push`, targets, detections, cooldown };
+    if (this._config.entry_id) msg.entry_id = this._config.entry_id;
+    try {
+      await this._hass.callWS(msg);
+      this._showToast(this._t("push_saved"), false);
+    } catch (e) {
+      const code = e && e.code === "unauthorized" ? "no_admin" : (e && (e.message || e.code)) || "?";
+      this._showToast(this._t("resp_error", { e: this._errText(code) }), true);
     }
   }
 

@@ -11,7 +11,7 @@ Reolink Manager is an add-on for Home Assistant. It sits on top of the **officia
 
 The manager only reads the devices, entities and states the Reolink integration already provides. It does **not talk to the cameras itself**, so battery cameras (e.g. Argus) are not woken up additionally.
 
-> **Important, version 0.0.2:** Thorsten confirmed overview, sensors and events with 0.0.1 on his installation; they are now **always on**. New are live view, gallery and push notifications. Like controls, PTZ and refresh/wake they are **untested** and **hidden by default** (see [Experimental features](#experimental-features)). The new features have not yet been tested with real cameras or smartphones. Details in [EXPERIMENTELL.md](EXPERIMENTELL.md) (German).
+> **Important, version 0.0.3:** Thorsten confirmed overview, sensors and events with 0.0.1 on his installation; they are now **always on**. New are live view, gallery and push notifications. Like controls, PTZ and refresh/wake they are **untested** and **hidden by default** (see [Experimental features](#experimental-features)). The new features have not yet been tested with real cameras or smartphones. Details in [EXPERIMENTELL.md](EXPERIMENTELL.md) (German).
 
 ## Features
 
@@ -31,11 +31,18 @@ Always on (confirmed): the categories above, overview sensors (`sensors`) and ev
 
 Experimental: live view in the popup (`live`), gallery (`gallery`), push notifications with image on detection (`push`), PTZ control (`ptz`), refresh/wake (`refresh`) and controls (`controls`).
 
-The camera popup now has a visible scrollbar. With `live` it shows a still image at the top right away; a button starts the live stream, and a click on the PTZ controls switches to the stream automatically.
+The camera popup now has a visible scrollbar. With `live` it shows a still image at the top right away; a button starts the live stream, and pressing the PTZ controls switches to the stream automatically. The PTZ arrows move the camera only while you hold them; you choose the speed above the pad.
 
 The device selection in the options decides which cameras, hubs and chimes appear at all. Each category has its own switch in the card.
 
-## New in 0.0.2
+## New in 0.0.3
+
+- PTZ: the camera moves only while you hold an arrow. Releasing it stops the camera, a short tap moves it only a little. There is a speed (slow, medium, fast) and a safety stop after 8 seconds
+- Push settings (smartphones, detections, lock time) are now in the card under *Settings* instead of the integration options. The selection takes effect immediately
+- A dashboard "Reolink Manager" with the card is created automatically when the `push` feature is on. Tapping the push message opens it and shows the live view
+- The card's Lovelace resource is now really registered automatically (in 0.0.2 it had to be added by hand)
+
+### Earlier in 0.0.2
 
 - Popup: visible scrollbar, the accordions are no longer squashed
 - Live view in the popup (`live`): still image right away, stream via button, a PTZ click switches to the stream
@@ -62,11 +69,11 @@ Then: Settings → Devices & services → Add integration → **Reolink Manager*
 
 1. Select the Reolink entries the manager should watch.
 2. Under *Configure* choose the devices (empty = all), detection types, battery thresholds (default low 30 %, critical 15 %), offline delay (default 120 s) and whether events are sent.
-3. For experimental features: switch on *Show experimental features* and tick the features you want. A second step follows with the settings for gallery and push.
+3. For experimental features: switch on *Show experimental features* and tick the features you want. A second step follows with the setting for the gallery.
 4. **Gallery:** number of videos per camera (default 5). The card loads only when you expand a camera and uses the low resolution.
-5. **Push:** smartphones (`notify.mobile_app_…`, several possible), detection types (default person), lock time (default 60 s) and the dashboard path of the card, e.g. `/lovelace/cameras`. A tap on the message opens that dashboard and the card opens the camera's live view. The gear tab has a test message.
+5. **Push:** switch on the `push` feature. Choose smartphones (`notify.mobile_app_…`, several possible), detection types (default person) and lock time (default 60 s) in the card under *Settings* → *Push notifications*, where you also find a test message. The integration creates the dashboard "Reolink Manager" with the card itself (only if Lovelace runs in storage mode). A tap on the message opens it and the card shows the camera's live view.
 
-The card is registered as a Lovelace resource automatically (in YAML mode add `/reolink_manager_files/reolink-manager-card.js?v=0.0.2` as a module resource by hand).
+The card is registered as a Lovelace resource automatically (in YAML mode add `/reolink_manager_files/reolink-manager-card.js?v=0.0.3` as a module resource by hand).
 
 ## The card
 
@@ -149,6 +156,8 @@ In 0.0.2 live view, gallery, push, controls, PTZ and refresh/wake are untested. 
 ## Known limitations
 
 - **New features not tested on real hardware.** Thorsten confirmed overview, sensors and events with 0.0.1. Everything new was only tested against real Home Assistant classes with simulated Reolink entities and in the browser with test data; push not on real smartphones.
+- PTZ speed: it only takes effect if the Reolink integration offers the service `reolink.ptz_move` with speed. Otherwise the camera uses its own speed; holding and releasing still work.
+- The dashboard is only created automatically if Lovelace runs in storage mode. In YAML mode please create a dashboard with the card yourself.
 - The Reolink integration provides **no preview images** for recordings. The gallery therefore shows the current camera image per camera (for battery cameras only on button press) and a list of recordings.
 - Whether a recording plays in the browser depends on the codec (H.265 does not work in every browser). Then use "Open in Home Assistant".
 - Push: whether image and tap behave the same on iOS and Android is open. The companion app must be allowed to show notifications.
@@ -171,7 +180,8 @@ In 0.0.2 live view, gallery, push, controls, PTZ and refresh/wake are untested. 
 
 | Version | Change |
 |---|---|
-| **0.0.2** | Popup with scrollbar, live view, gallery, push notifications. Overview, sensors, events confirmed and always on. |
+| **0.0.3** | PTZ only while the button is held, with speed; push settings in the card; dashboard and Lovelace resource created automatically. |
+| 0.0.2 | Popup with scrollbar, live view, gallery, push notifications. Overview, sensors, events confirmed and always on. |
 | 0.0.1 | First release. Everything experimental. |
 
 ## File integrity
@@ -182,11 +192,11 @@ Python, JavaScript and YAML files carry a SHA-256 hash of the content from line 
 |---|---|
 | `hacs.json` | `4e05738d8be8aa023f7d922544ed51f3aefbd0bb5fe89f9b7573e637c505d5ad` |
 | `custom_components/reolink_manager/icons.json` | `b67ca9f86968bb7b07e93637b107963721a319cbc429b4c3bc4c9a9bc039f49a` |
-| `custom_components/reolink_manager/manifest.json` | `50228b60a216612f0bd8cef69fa8856084cd42aa6e8a3925147efae67a109dab` |
-| `custom_components/reolink_manager/strings.json` | `2c05a417e0253758b2698470833ea0545472d5b05c08afde707993709c65ac17` |
-| `custom_components/reolink_manager/translations/de.json` | `2c05a417e0253758b2698470833ea0545472d5b05c08afde707993709c65ac17` |
-| `custom_components/reolink_manager/translations/en.json` | `54d3cf5665d03ee599607d06613d8d94610f167ba2cc23508fb852bc70da7c5b` |
-| `custom_components/reolink_manager/translations/nl.json` | `500de58bc94c634e79ee860ae55aa1d3796acf21a77f2a77d2d48f10193f25cb` |
+| `custom_components/reolink_manager/manifest.json` | `f3ae5cc2b8e5f3b8996e7ba90bc5593727646fc8b648c5e5855245c14247874a` |
+| `custom_components/reolink_manager/strings.json` | `c5bd5662f23bd549b4cb413a59973fed59ff0881da64471599623e456333f64c` |
+| `custom_components/reolink_manager/translations/de.json` | `c5bd5662f23bd549b4cb413a59973fed59ff0881da64471599623e456333f64c` |
+| `custom_components/reolink_manager/translations/en.json` | `3fb9a5f6fb603bbd670d5cc62ad6965f52fda0326d2168b13533de28cb4cfe32` |
+| `custom_components/reolink_manager/translations/nl.json` | `996e2002b72cf84a76fc8c3ab0bc579befe2f4b7e12fb15754dfa7442bbf639e` |
 
 ## License
 

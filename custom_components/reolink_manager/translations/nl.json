@@ -57,22 +57,14 @@
       },
       "experimental": {
         "title": "Experimentele functies",
-        "description": "Deze functies zijn ongetest. Kies wat je wilt testen. Live-beeld en galerij kunnen accu-camera's wekken.",
+        "description": "Deze functies zijn ongetest. Kies wat je wilt testen. Live-beeld en galerij kunnen accu-camera's wekken. De smartphones voor pushmeldingen kies je in de kaart onder Instellingen.",
         "data": {
           "experimental_features": "Experimentele functies",
-          "gallery_count": "Aantal galerijvideo's per camera",
-          "push_targets": "Smartphones voor pushmeldingen",
-          "push_detections": "Detecties die een pushmelding activeren",
-          "push_cooldown": "Blokkeertijd per camera en detectie (seconden)",
-          "push_path": "Dashboardpad voor tikken op de melding"
+          "gallery_count": "Aantal galerijvideo's per camera"
         },
         "data_description": {
           "experimental_features": "Alleen werkzaam als de hoofdschakelaar aan staat.",
-          "gallery_count": "De nieuwste opnames in lage resolutie worden geladen (1 tot 20).",
-          "push_targets": "Mobile-app-diensten (notify.mobile_app_…). Meerdere mogelijk. Leeg = geen pushmeldingen. Werkt met de functie „Push”.",
-          "push_detections": "Alleen deze detectiesoorten sturen een bericht.",
-          "push_cooldown": "Binnen deze tijd stuurt dezelfde camera geen tweede bericht voor dezelfde detectie. 0 = geen blokkering.",
-          "push_path": "Dashboard met de kaart, bijv. /lovelace/camera. Tikken op de melding opent daar het live-beeld van de camera."
+          "gallery_count": "De nieuwste opnames in lage resolutie worden geladen (1 tot 20)."
         }
       }
     },

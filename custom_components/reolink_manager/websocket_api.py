@@ -1,4 +1,4 @@
-# SHA256 (Inhalt ab Zeile 2, d.h. dieser Datei ohne diese erste Zeile): 7e9ed9e2e4728ff1b6cc9aa9b0f3c90834c26ab94eaaa2c115e4124da341566c
+# SHA256 (Inhalt ab Zeile 2, d.h. dieser Datei ohne diese erste Zeile): d3c7b452061828561f20ded59ef5c23ec21dc26ca67f3e7d3c47b3d070dc9b84
 """WebSocket-Schnittstelle für die Karte (Schreiben nur für Administratoren)."""
 from __future__ import annotations
 
@@ -13,8 +13,8 @@ from homeassistant.core import HomeAssistant, callback
 from .const import DOMAIN
 from .manager import ActionError, FeatureDisabled
 
-ACTIONS = ["set_entity", "refresh_device", "rescan", "check_update", "test_push"]
-OPS = ["turn_on", "turn_off", "press", "select"]
+ACTIONS = ["set_entity", "refresh_device", "rescan", "check_update", "test_push", "ptz"]
+OPS = ["turn_on", "turn_off", "press", "select", "move", "stop"]
 
 
 def _manager(hass: HomeAssistant, entry_id: str | None):
@@ -33,6 +33,7 @@ def async_register_websocket(hass: HomeAssistant) -> None:
     websocket_api.async_register_command(hass, ws_subscribe)
     websocket_api.async_register_command(hass, ws_details)
     websocket_api.async_register_command(hass, ws_gallery)
+    websocket_api.async_register_command(hass, ws_set_push)
     websocket_api.async_register_command(hass, ws_action)
     websocket_api.async_register_command(hass, ws_info)
 
@@ -107,6 +108,33 @@ async def ws_gallery(
 @websocket_api.require_admin
 @websocket_api.websocket_command(
     {
+        vol.Required("type"): f"{DOMAIN}/set_push",
+        vol.Required("targets"): [str],
+        vol.Required("detections"): [str],
+        vol.Required("cooldown"): vol.All(int, vol.Range(min=0, max=3600)),
+        vol.Optional("entry_id"): str,
+    }
+)
+@websocket_api.async_response
+async def ws_set_push(
+    hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]
+) -> None:
+    """Push-Einstellungen (Smartphones, Erkennungen, Sperrzeit) aus der Karte speichern."""
+    manager = _manager(hass, msg.get("entry_id"))
+    if manager is None:
+        connection.send_error(msg["id"], "not_loaded", "Reolink Manager ist nicht geladen")
+        return
+    try:
+        manager.async_set_push(msg["targets"], msg["detections"], msg["cooldown"])
+    except (FeatureDisabled, ActionError) as err:
+        connection.send_error(msg["id"], str(err), str(err))
+        return
+    connection.send_result(msg["id"], {"saved": True})
+
+
+@websocket_api.require_admin
+@websocket_api.websocket_command(
+    {
         vol.Required("type"): f"{DOMAIN}/action",
         vol.Required("action"): vol.In(ACTIONS),
         vol.Optional("entry_id"): str,
@@ -128,7 +156,7 @@ async def ws_action(
     if action == "refresh_device" and not msg.get("device"):
         connection.send_error(msg["id"], "invalid_format", "device fehlt")
         return
-    if action == "set_entity" and not (msg.get("entity") and msg.get("op")):
+    if action in ("set_entity", "ptz") and not (msg.get("entity") and msg.get("op")):
         connection.send_error(msg["id"], "invalid_format", "entity und op fehlen")
         return
     connection.send_result(msg["id"], {"accepted": True})

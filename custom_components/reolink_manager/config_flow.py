@@ -1,4 +1,4 @@
-# SHA256 (Inhalt ab Zeile 2, d.h. dieser Datei ohne diese erste Zeile): 2e345d8043e934bf75391e4c5b26600b23171469b36208895deeb6228de91970
+# SHA256 (Inhalt ab Zeile 2, d.h. dieser Datei ohne diese erste Zeile): ca896eabf6abe476493e7f1d5280e670c1e8f08abca7a54efe926749183629f6
 """Einrichtung, Neu-Konfigurieren und Optionen des Reolink Managers."""
 from __future__ import annotations
 
@@ -18,7 +18,6 @@ from homeassistant.helpers.selector import (
     SelectSelector,
     SelectSelectorConfig,
     SelectSelectorMode,
-    TextSelector,
 )
 
 from .const import (
@@ -40,8 +39,6 @@ from .const import (
     DEFAULT_BATTERY_LOW,
     DEFAULT_GALLERY_COUNT,
     DEFAULT_OFFLINE_DELAY,
-    DEFAULT_PUSH_COOLDOWN,
-    DEFAULT_PUSH_DETECTIONS,
     DETECTION_KINDS,
     DOMAIN,
     EXPERIMENTAL_FEATURES,
@@ -262,15 +259,8 @@ class ReolinkManagerOptionsFlow(OptionsFlow):
                         f for f in user_input.get(CONF_EXPERIMENTAL_FEATURES, []) if f in EXPERIMENTAL_FEATURES
                     ],
                     CONF_GALLERY_COUNT: int(user_input[CONF_GALLERY_COUNT]),
-                    CONF_PUSH_TARGETS: list(user_input.get(CONF_PUSH_TARGETS, [])),
-                    CONF_PUSH_DETECTIONS: list(user_input.get(CONF_PUSH_DETECTIONS, [])),
-                    CONF_PUSH_COOLDOWN: int(user_input[CONF_PUSH_COOLDOWN]),
-                    CONF_PUSH_PATH: str(user_input.get(CONF_PUSH_PATH, "")).strip(),
                 }
             )
-        notify = self.hass.services.async_services().get("notify", {})
-        targets = sorted(name for name in notify if name.startswith("mobile_app_"))
-        chosen = [t for t in opts.get(CONF_PUSH_TARGETS, []) if t in targets]
         schema = vol.Schema(
             {
                 vol.Optional(
@@ -289,28 +279,6 @@ class ReolinkManagerOptionsFlow(OptionsFlow):
                 ): NumberSelector(
                     NumberSelectorConfig(min=1, max=GALLERY_MAX_COUNT, step=1, mode=NumberSelectorMode.BOX)
                 ),
-                vol.Optional(CONF_PUSH_TARGETS, default=chosen): SelectSelector(
-                    SelectSelectorConfig(options=targets, multiple=True, mode=SelectSelectorMode.DROPDOWN)
-                ),
-                vol.Optional(
-                    CONF_PUSH_DETECTIONS,
-                    default=opts.get(CONF_PUSH_DETECTIONS, DEFAULT_PUSH_DETECTIONS),
-                ): SelectSelector(
-                    SelectSelectorConfig(
-                        options=DETECTION_KINDS,
-                        multiple=True,
-                        mode=SelectSelectorMode.LIST,
-                        translation_key="detection_types",
-                    )
-                ),
-                vol.Required(
-                    CONF_PUSH_COOLDOWN, default=opts.get(CONF_PUSH_COOLDOWN, DEFAULT_PUSH_COOLDOWN)
-                ): NumberSelector(
-                    NumberSelectorConfig(min=0, max=3600, step=5, mode=NumberSelectorMode.BOX, unit_of_measurement="s")
-                ),
-                vol.Optional(
-                    CONF_PUSH_PATH, default=opts.get(CONF_PUSH_PATH, "")
-                ): TextSelector(),
             }
         )
         return self.async_show_form(step_id="experimental", data_schema=schema)

@@ -1,4 +1,4 @@
-# SHA256 (Inhalt ab Zeile 2, d.h. dieser Datei ohne diese erste Zeile): eb4ab0a7f4bcf2a2c6e61957e5dee0d71e57e531daf764cb0c76af24b8063496
+# SHA256 (Inhalt ab Zeile 2, d.h. dieser Datei ohne diese erste Zeile): 20e3d179daa72badb5133e04f5b32b6aa5b134a5594c0396e4f6f18935208fdf
 """Datenmodell, Zwischenspeicher, Aktionen und Ereignisse des Reolink Managers.
 
 Der Manager spricht nie selbst mit den Kameras. Er liest nur Geräte-, Entitäts-
@@ -66,6 +66,13 @@ from .const import (
     RESCAN_DELAY,
     UPDATE_CHECK_INTERVAL_HOURS,
     VERSION,
+    DASHBOARD_PUSH_PATH,
+    LIVE_OPTION_KEYS,
+    PTZ_FAILSAFE_SECONDS,
+    PTZ_MIN_MOVE_SECONDS,
+    PTZ_SPEED_DEFAULT,
+    PTZ_SPEED_MAX,
+    PTZ_SPEED_MIN,
 )
 from .update_check import async_fetch_latest
 
@@ -225,6 +232,11 @@ class ReolinkManager:
         self._stopped = False
         self._gallery_cache: dict[str, tuple[float, dict[str, Any]]] = {}
         self._push_last: dict[tuple[str, str], float] = {}
+        self._ptz_locks: dict[str, asyncio.Lock] = {}
+        self._ptz_started: dict[str, float] = {}
+        self._ptz_failsafe: dict[str, CALLBACK_TYPE] = {}
+        self.dashboard_ready = False
+        self.options_sig: dict[str, Any] = {}
         self.app: dict[str, Any] = {
             "version": VERSION,
             "latest_version": None,
@@ -267,7 +279,20 @@ class ReolinkManager:
 
     @property
     def push_targets(self) -> list[str]:
-        return [t for t in self.entry.options.get(CONF_PUSH_TARGETS, []) if isinstance(t, str)]
+        """Namen der notify-Dienste (ohne „notify.“), z. B. mobile_app_pixel."""
+        out: list[str] = []
+        for t in self.entry.options.get(CONF_PUSH_TARGETS, []):
+            if isinstance(t, str):
+                name = t.removeprefix("notify.")
+                if name and name not in out:
+                    out.append(name)
+        return out
+
+    @property
+    def push_available(self) -> list[str]:
+        """Alle vorhandenen Mobile-App-Dienste."""
+        notify = self.hass.services.async_services().get("notify", {})
+        return sorted(name for name in notify if name.startswith("mobile_app_"))
 
     @property
     def push_detections(self) -> list[str]:
@@ -279,8 +304,11 @@ class ReolinkManager:
 
     @property
     def push_path(self) -> str:
+        """Automatisch angelegtes Dashboard; ersatzweise ein alter, von Hand gesetzter Pfad."""
+        if self.dashboard_ready:
+            return DASHBOARD_PUSH_PATH
         path = str(self.entry.options.get(CONF_PUSH_PATH, "") or "").strip()
-        return path if path.startswith("/") else f"/{path}" if path else "/"
+        return path if path.startswith("/") else f"/{path}" if path else DASHBOARD_PUSH_PATH
 
     def feature_enabled(self, key: str) -> bool:
         """Geprüfte Funktionen sind immer aktiv, experimentelle nur mit Hauptschalter UND Einzelschalter."""
@@ -330,6 +358,9 @@ class ReolinkManager:
         for handle in self._offline_timers.values():
             handle()
         self._offline_timers.clear()
+        for handle in self._ptz_failsafe.values():
+            handle()
+        self._ptz_failsafe.clear()
         self._listeners.clear()
 
     async def _async_interval_check(self, _now: Any) -> None:
@@ -798,8 +829,10 @@ class ReolinkManager:
                 "detection_types": self.detection_types,
                 "devices_selected": len(self.entry.options.get(CONF_DEVICES) or []),
                 "gallery_count": self.gallery_count,
-                "push_targets": len(self.push_targets),
+                "push_targets": self.push_targets,
+                "push_available": self.push_available,
                 "push_detections": self.push_detections,
+                "detection_kinds": list(DETECTION_KINDS),
                 "push_cooldown": self.push_cooldown,
                 "push_path": self.push_path,
             },
@@ -944,6 +977,8 @@ class ReolinkManager:
                 await self.async_check_update()
             elif action == "test_push":
                 await self._async_test_push(msg.get("device"))
+            elif action == "ptz":
+                await self._async_ptz(msg, context)
             else:
                 raise ActionError("not_allowed")
         except FeatureDisabled as err:
@@ -954,7 +989,8 @@ class ReolinkManager:
             _LOGGER.warning("Aktion %s fehlgeschlagen: %s", action, type(err).__name__)
             self.respond(action, "error", "call_failed")
         else:
-            self.respond(action, "ok")
+            if action != "ptz":  # Halten-Bewegung erzeugt viele Aufrufe, nur Fehler melden
+                self.respond(action, "ok")
 
     async def _async_test_push(self, device_id: str | None) -> None:
         self._require_feature("push")
@@ -1087,6 +1123,120 @@ class ReolinkManager:
         else:
             raise ActionError("not_allowed")
         await self.hass.services.async_call(domain, service, data, blocking=True, context=context)
+
+    # ------------------------------------------------------------------
+    # PTZ: Bewegung solange gehalten wird, mit einstellbarer Geschwindigkeit
+    # ------------------------------------------------------------------
+    def _ptz_stop_entity(self, device_id: str) -> str | None:
+        for entity_id, info in self._entities.items():
+            if info["device"] == device_id and info["role"] == "ptz:stop":
+                return entity_id
+        return None
+
+    async def _ptz_press(self, entity_id: str, speed: int | None, context: Context | None) -> None:
+        """Mit Geschwindigkeit über reolink.ptz_move, sonst als einfacher Tastendruck."""
+        if speed is not None and self.hass.services.has_service("reolink", "ptz_move"):
+            try:
+                await self.hass.services.async_call(
+                    "reolink", "ptz_move", {"entity_id": entity_id, "speed": speed},
+                    blocking=True, context=context,
+                )
+                return
+            except HomeAssistantError:
+                _LOGGER.debug("reolink.ptz_move nicht möglich, nutze den Tastendruck")
+        await self.hass.services.async_call(
+            "button", "press", {"entity_id": entity_id}, blocking=True, context=context
+        )
+
+    def _cancel_ptz_failsafe(self, device_id: str) -> None:
+        handle = self._ptz_failsafe.pop(device_id, None)
+        if handle:
+            handle()
+
+    async def _async_ptz(self, msg: dict[str, Any], context: Context | None) -> None:
+        """op=move: Bewegung starten; op=stop: anhalten. Je Gerät streng nacheinander."""
+        self._require_feature("ptz")
+        entity_id = msg.get("entity")
+        info = self._entities.get(entity_id or "")
+        if info is None:
+            raise ActionError("unknown_entity")
+        if info["domain"] != "button" or not str(info["role"]).startswith("ptz:"):
+            raise ActionError("not_allowed")
+        op = msg.get("op")
+        if op not in ("move", "stop"):
+            raise ActionError("not_allowed")
+        device_id = info["device"]
+        speed = PTZ_SPEED_DEFAULT
+        if msg.get("value") not in (None, ""):
+            try:
+                speed = int(str(msg["value"]))
+            except ValueError as err:
+                raise ActionError("bad_value") from err
+            speed = max(PTZ_SPEED_MIN, min(PTZ_SPEED_MAX, speed))
+        lock = self._ptz_locks.setdefault(device_id, asyncio.Lock())
+        async with lock:
+            if op == "move" and info["role"] != "ptz:stop":
+                self._ptz_started[device_id] = time.monotonic()
+                await self._ptz_press(entity_id, speed, context)
+                self._cancel_ptz_failsafe(device_id)
+                self._ptz_failsafe[device_id] = async_call_later(
+                    self.hass, PTZ_FAILSAFE_SECONDS, partial(self._ptz_failsafe_stop, device_id)
+                )
+                return
+            stop = entity_id if info["role"] == "ptz:stop" else self._ptz_stop_entity(device_id)
+            if stop is None:
+                raise ActionError("unknown_entity")
+            started = self._ptz_started.pop(device_id, None)
+            if started is not None:
+                wait = PTZ_MIN_MOVE_SECONDS - (time.monotonic() - started)
+                if wait > 0:
+                    await asyncio.sleep(wait)
+            self._cancel_ptz_failsafe(device_id)
+            await self._ptz_press(stop, None, context)
+
+    @callback
+    def _ptz_failsafe_stop(self, device_id: str, _now: Any) -> None:
+        """Bleibt der Stopp-Befehl aus (Verbindung weg), hält die Kamera nach kurzer Zeit selbst an."""
+        self._ptz_failsafe.pop(device_id, None)
+        stop = self._ptz_stop_entity(device_id)
+        if stop is None or self._stopped:
+            return
+        self.entry.async_create_background_task(
+            self.hass, self._ptz_press(stop, None, None), "reolink_manager_ptz_failsafe"
+        )
+
+    # ------------------------------------------------------------------
+    # Push-Einstellungen aus der Karte (ohne Neuladen der Integration)
+    # ------------------------------------------------------------------
+    def async_set_push(self, targets: list[str], detections: list[str], cooldown: int) -> None:
+        self._require_feature("push")
+        clean_targets: list[str] = []
+        for t in targets:
+            name = str(t).removeprefix("notify.")
+            if not name.startswith("mobile_app_") or not name.replace("_", "").isalnum():
+                raise ActionError("bad_value")
+            if name not in clean_targets:
+                clean_targets.append(name)
+        if any(d not in DETECTION_KINDS for d in detections):
+            raise ActionError("bad_value")
+        options = {
+            **self.entry.options,
+            CONF_PUSH_TARGETS: clean_targets,
+            CONF_PUSH_DETECTIONS: sorted(set(detections), key=DETECTION_KINDS.index),
+            CONF_PUSH_COOLDOWN: max(0, min(3600, int(cooldown))),
+        }
+        self.hass.config_entries.async_update_entry(self.entry, options=options)
+
+    @staticmethod
+    def options_signature(options: Any) -> dict[str, Any]:
+        """Optionen ohne die live änderbaren (Entscheidung Neuladen ja/nein)."""
+        return {k: v for k, v in dict(options).items() if k not in LIVE_OPTION_KEYS}
+
+    @callback
+    def async_options_changed(self) -> None:
+        """Live änderbare Optionen gespeichert: Ansicht neu aufbauen, kein Neuladen."""
+        self._rebuild()
+        self._notify("snapshot", self.data)
 
     # ------------------------------------------------------------------
     # Diagnose (anonymisiert)

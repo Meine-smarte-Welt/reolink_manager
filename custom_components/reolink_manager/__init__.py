@@ -1,4 +1,4 @@
-# SHA256 (Inhalt ab Zeile 2, d.h. dieser Datei ohne diese erste Zeile): 7e24e905d91565ccb4a66fb5115de37d2c3b1ce35df530a6f022cb8a091b3b80
+# SHA256 (Inhalt ab Zeile 2, d.h. dieser Datei ohne diese erste Zeile): 72c0834fec0953c41473db96369c9c16b5697b8b2f1f4608666d17c1710fd520
 """Reolink Manager: Übersicht und Steuerung für die offizielle Reolink-Integration."""
 from __future__ import annotations
 
@@ -14,7 +14,14 @@ from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
-from .const import CARD_FILENAME, CARD_URL_BASE, DOMAIN, VERSION
+from .const import (
+    CARD_FILENAME,
+    CARD_URL_BASE,
+    DASHBOARD_URL_PATH,
+    DASHBOARD_VIEW_PATH,
+    DOMAIN,
+    VERSION,
+)
 from .manager import ActionError, FeatureDisabled, ReolinkManager
 from .websocket_api import async_register_websocket
 
@@ -54,19 +61,16 @@ async def _async_register_card(hass: HomeAssistant) -> None:
 
 
 async def _async_register_resource(hass: HomeAssistant, base: str, url: str) -> None:
-    lovelace = None
-    try:
-        from homeassistant.components.lovelace.const import LOVELACE_DATA
-
-        lovelace = hass.data.get(LOVELACE_DATA)
-    except ImportError:
-        lovelace = hass.data.get("lovelace")
+    """Karte als Lovelace-Ressource eintragen (nur im Speichermodus der Ressourcen möglich)."""
+    lovelace = _lovelace_data(hass)
     if lovelace is None:
+        _LOGGER.info("Lovelace nicht verfügbar: Trage %s manuell als JavaScript-Modul ein", url)
         return
-    mode = getattr(lovelace, "mode", None)
+    # Home Assistant nennt das Feld resource_mode, ältere Versionen mode
+    mode = getattr(lovelace, "resource_mode", None) or getattr(lovelace, "mode", None)
     resources = getattr(lovelace, "resources", None)
     if mode != "storage" or resources is None:
-        _LOGGER.info("Lovelace im YAML-Modus: Trage %s manuell als JavaScript-Modul ein", url)
+        _LOGGER.info("Lovelace-Ressourcen im YAML-Modus: Trage %s manuell als JavaScript-Modul ein", url)
         return
     if not getattr(resources, "loaded", True):
         await resources.async_load()
@@ -77,6 +81,94 @@ async def _async_register_resource(hass: HomeAssistant, base: str, url: str) -> 
                 await resources.async_update_item(item["id"], {"res_type": "module", "url": url})
             return
     await resources.async_create_item({"res_type": "module", "url": url})
+
+
+def _lovelace_data(hass: HomeAssistant) -> Any:
+    try:
+        from homeassistant.components.lovelace.const import LOVELACE_DATA
+
+        return hass.data.get(LOVELACE_DATA)
+    except ImportError:
+        return hass.data.get("lovelace")
+
+
+def _dashboard_config(title: str) -> dict[str, Any]:
+    return {
+        "title": title,
+        "views": [
+            {
+                "title": title,
+                "path": DASHBOARD_VIEW_PATH,
+                "icon": "mdi:cctv",
+                "type": "panel",
+                "cards": [
+                    {
+                        "type": "custom:reolink-manager-card",
+                        "title": title,
+                        "show_experimental": True,
+                        "default_tab": "cameras",
+                    }
+                ],
+            }
+        ],
+    }
+
+
+async def async_ensure_dashboard(hass: HomeAssistant) -> bool:
+    """Dashboard „Reolink Manager“ mit der Karte anlegen, falls es fehlt. Bestehendes bleibt unangetastet.
+
+    Der Tipp auf eine Push-Nachricht öffnet dieses Dashboard. Gibt True zurück, wenn es danach existiert.
+    """
+    lovelace = _lovelace_data(hass)
+    if lovelace is None or not hasattr(lovelace, "dashboards"):
+        return False
+    try:
+        from homeassistant.components import frontend
+        from homeassistant.components.lovelace import dashboard as ll_dashboard
+        from homeassistant.components.lovelace.const import ConfigNotFound
+
+        title = "Reolink Manager"
+        existing = lovelace.dashboards.get(DASHBOARD_URL_PATH)
+        if existing is None:
+            collection = ll_dashboard.DashboardsCollection(hass)
+            await collection.async_load()
+            item = next(
+                (i for i in collection.async_items() if i.get("url_path") == DASHBOARD_URL_PATH), None
+            )
+            if item is None:
+                item = await collection.async_create_item(
+                    {
+                        "url_path": DASHBOARD_URL_PATH,
+                        "title": title,
+                        "icon": "mdi:cctv",
+                        "show_in_sidebar": True,
+                        "require_admin": False,
+                    }
+                )
+            existing = ll_dashboard.LovelaceStorage(hass, item)
+            lovelace.dashboards[DASHBOARD_URL_PATH] = existing
+            frontend.async_register_built_in_panel(
+                hass,
+                "lovelace",
+                frontend_url_path=DASHBOARD_URL_PATH,
+                require_admin=bool(item.get("require_admin", False)),
+                sidebar_title=item.get("title", title),
+                sidebar_icon=item.get("icon", "mdi:cctv"),
+                config={"mode": "storage"},
+                update=True,
+            )
+        try:
+            await existing.async_load(False)
+        except ConfigNotFound:
+            await existing.async_save(_dashboard_config(title))
+    except Exception:  # noqa: BLE001 - das Dashboard ist Komfort, die Integration muss trotzdem laufen
+        _LOGGER.warning(
+            "Dashboard konnte nicht automatisch angelegt werden. Lege ein Dashboard mit der Karte "
+            "custom:reolink-manager-card selbst an",
+            exc_info=True,
+        )
+        return False
+    return True
 
 
 def _loaded_managers(hass: HomeAssistant, entry_id: str | None) -> list[ReolinkManager]:
@@ -130,6 +222,9 @@ def _async_register_services(hass: HomeAssistant) -> None:
 
 async def async_setup_entry(hass: HomeAssistant, entry: ReolinkManagerConfigEntry) -> bool:
     manager = ReolinkManager(hass, entry)
+    manager.options_sig = ReolinkManager.options_signature(entry.options)
+    if manager.feature_enabled("push"):
+        manager.dashboard_ready = await async_ensure_dashboard(hass)
     await manager.async_start()
     entry.runtime_data = manager
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
@@ -138,6 +233,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ReolinkManagerConfigEntr
 
 
 async def _async_update_listener(hass: HomeAssistant, entry: ReolinkManagerConfigEntry) -> None:
+    manager = entry.runtime_data
+    sig = ReolinkManager.options_signature(entry.options)
+    if sig == manager.options_sig:
+        # Nur Push-Einstellungen aus der Karte: kein Neuladen, die Karte bekommt sofort die neue Ansicht
+        manager.async_options_changed()
+        return
     await hass.config_entries.async_reload(entry.entry_id)
 
 
