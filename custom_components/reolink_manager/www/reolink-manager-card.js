@@ -1,18 +1,19 @@
-// SHA256 (Inhalt ab Zeile 2, d.h. dieser Datei ohne diese erste Zeile): da2ffe7e4b61600f412adf1fac7e06c09349dff9dd59477d86268e01b317021b
+// SHA256 (Inhalt ab Zeile 2, d.h. dieser Datei ohne diese erste Zeile): 500eccfd8dd111a0767816143b6dfcba20d2d38e0514600212b3f7d244bafc41
 /* Reolink Manager – Karte für Home Assistant (Meine smarte Welt) */
-const CARD_VERSION = "0.0.1";
+const CARD_VERSION = "0.0.2";
 const TAG = "reolink-manager-card";
 const WS = "reolink_manager";
 
-const TAB_ORDER = ["cameras", "battery", "detections", "updates", "storage", "controls", "hub", "bridge"];
+const TAB_ORDER = ["cameras", "battery", "detections", "updates", "storage", "gallery", "controls", "hub", "bridge"];
 const TAB_META = {
-  cameras: { icon: "mdi:cctv", label: "tab_cameras", exp: "overview" },
-  battery: { icon: "mdi:battery-70", label: "tab_battery", exp: "overview" },
-  detections: { icon: "mdi:motion-sensor", label: "tab_detections", exp: "overview" },
-  updates: { icon: "mdi:update", label: "tab_updates", exp: "overview" },
-  storage: { icon: "mdi:sd", label: "tab_storage", exp: "overview" },
+  cameras: { icon: "mdi:cctv", label: "tab_cameras", exp: null },
+  battery: { icon: "mdi:battery-70", label: "tab_battery", exp: null },
+  detections: { icon: "mdi:motion-sensor", label: "tab_detections", exp: null },
+  updates: { icon: "mdi:update", label: "tab_updates", exp: null },
+  storage: { icon: "mdi:sd", label: "tab_storage", exp: null },
+  gallery: { icon: "mdi:filmstrip", label: "tab_gallery", exp: "gallery" },
   controls: { icon: "mdi:tune-variant", label: "tab_controls", exp: "controls" },
-  hub: { icon: "mdi:router-wireless", label: "tab_hub", exp: "overview" },
+  hub: { icon: "mdi:router-wireless", label: "tab_hub", exp: null },
   bridge: { icon: "mdi:cog", label: "tab_bridge", exp: null },
 };
 const CATEGORY_ICON_COLOR_KEYS = Object.fromEntries(TAB_ORDER.map((k) => [k, `color_icon_${k}`]));
@@ -22,10 +23,9 @@ const DET_ICON = {
   visitor: "mdi:doorbell", baby_cry: "mdi:baby-face-outline", bicycle: "mdi:bike",
 };
 const KIND_ICON = { camera: "mdi:cctv", hub: "mdi:router-wireless", chime: "mdi:bell-ring" };
-const EXP_KEYS = ["overview", "sensors", "events", "controls", "ptz", "refresh"];
 const EXP_ICON = {
-  overview: "mdi:cctv", sensors: "mdi:counter", events: "mdi:bell-ring-outline",
   controls: "mdi:tune-variant", ptz: "mdi:pan", refresh: "mdi:sync",
+  live: "mdi:video-outline", gallery: "mdi:filmstrip", push: "mdi:cellphone-message",
 };
 
 const COLOR_CONFIG_KEYS = {
@@ -47,7 +47,7 @@ const DEFAULTS = {
   title: "Reolink Manager", show_title: true, entry_id: "", default_tab: "cameras", max_rows: 50, zoom: 100,
   show_stats: true, show_search: true, show_filter_bar: true, default_sort: "name",
   show_col_model: true, show_col_hub: true, show_col_battery: true, show_col_wifi: true, show_col_last: true,
-  read_only: false, show_experimental: false,
+  read_only: false, show_experimental: false, live_auto: true,
 };
 TAB_ORDER.forEach((k) => { DEFAULTS[`show_${k}`] = true; });
 
@@ -108,7 +108,6 @@ const I18N = {
     ev_offline: "offline", ev_online: "wieder online", ev_battery_low: "Batterie niedrig",
     ev_battery_critical: "Batterie kritisch", ev_update_available: "Update verfügbar",
     exp_state_on: "aktiv", exp_state_off: "aus",
-    exp_overview: "Übersicht (nur Lesen)", exp_sensors: "Übersichts-Sensoren", exp_events: "HA-Ereignisse",
     exp_controls: "Steuerung (schreibt)", exp_ptz: "PTZ (schreibt)", exp_refresh: "Aktualisieren/Wecken (schreibt)",
     exp_intro: "Diese Funktionen sind ungeprüft. Sie sind nur sichtbar, wenn der Hauptschalter und die jeweilige Funktion eingeschaltet sind.",
     resp_ok: "Erledigt", resp_error: "Fehlgeschlagen: {e}",
@@ -131,6 +130,21 @@ const I18N = {
     ed_color_tab_active: "Aktiver Tab", ed_color_success: "Erfolg (grün)", ed_color_warning: "Warnung (orange)",
     ed_color_error: "Fehler (rot)", ed_color_info: "Info (blau)", ed_color_row_icon: "Zeilensymbole (alle)",
     ed_color_live_banner: "Live-Banner", ed_color_icon: "Symbolfarbe {c}",
+    tab_gallery: "Galerie",
+    exp_live: "Live-Bild (weckt Akku-Kameras)", exp_gallery: "Galerie der Aufnahmen", exp_push: "Push-Nachricht mit Bild",
+    acc_live: "Live-Bild", live_refresh: "Standbild aktualisieren", live_start: "Live-Stream starten", live_stop: "Stream beenden",
+    live_loading: "Lade Bild …", live_stream_loading: "Starte Stream …", live_error: "Bild nicht verfügbar", live_unavailable: "Kamera nicht erreichbar",
+    live_battery_hint: "Akku-Kamera: Ein Bild weckt die Kamera und verbraucht Batterie.", live_stream_failed: "Stream konnte nicht gestartet werden, zeige Einzelbilder.",
+    gal_empty: "Keine Aufnahmen gefunden.", gal_loading: "Lade Aufnahmen …", gal_open_hint: "Zum Laden der Aufnahmen aufklappen.",
+    gal_error: "Aufnahmen konnten nicht geladen werden: {e}", gal_reload: "Neu laden", gal_count: "{n} Aufnahmen", gal_limit: "Anzahl in den Optionen der Integration einstellbar (aktuell {n}).",
+    gal_no_thumb: "Die Reolink-Integration liefert für Aufnahmen keine Vorschaubilder. Oben siehst du das aktuelle Kamerabild.", gal_snapshot: "Aktuelles Kamerabild", gal_snapshot_load: "Kamerabild laden",
+    gal_play_loading: "Lade Video …", gal_play_failed: "Video lässt sich hier nicht abspielen.", gal_open_ha: "In Home Assistant öffnen", gal_close: "Schließen",
+    err_gallery_failed: "Aufnahmen konnten nicht geladen werden", err_gallery_unavailable: "Für diese Kamera gibt es keine Aufnahmen (keine SD-Karte oder Wiedergabe nicht unterstützt)", err_no_push_target: "Kein Smartphone ausgewählt",
+    acc_push: "Push-Nachrichten", push_targets: "Smartphones", push_detections: "Erkennungen", push_cooldown: "Sperrzeit", push_path: "Dashboard-Pfad",
+    push_test: "Test-Nachricht senden", push_test_hint: "Sendet eine Nachricht mit aktuellem Bild an die gewählten Smartphones. Der Tipp darauf öffnet das Live-Bild.",
+    push_none: "Kein Smartphone gewählt. Auswahl unter Konfigurieren → Experimentelle Funktionen.", opt_gallery_count: "Galerie-Videos pro Kamera",
+    push_test_sent: "Test-Nachricht wird gesendet …",
+    ed_live_auto: "Standbild beim Öffnen des Popups automatisch laden",
   },
   en: {
     tab_cameras: "Cameras", tab_battery: "Battery", tab_detections: "Detections", tab_updates: "Updates",
@@ -188,7 +202,6 @@ const I18N = {
     ev_offline: "offline", ev_online: "back online", ev_battery_low: "battery low",
     ev_battery_critical: "battery critical", ev_update_available: "update available",
     exp_state_on: "active", exp_state_off: "off",
-    exp_overview: "Overview (read only)", exp_sensors: "Overview sensors", exp_events: "HA events",
     exp_controls: "Controls (writes)", exp_ptz: "PTZ (writes)", exp_refresh: "Refresh/wake (writes)",
     exp_intro: "These features are untested. They are only visible when the master switch and the individual feature are on.",
     resp_ok: "Done", resp_error: "Failed: {e}",
@@ -211,6 +224,21 @@ const I18N = {
     ed_color_tab_active: "Active tab", ed_color_success: "Success (green)", ed_color_warning: "Warning (orange)",
     ed_color_error: "Error (red)", ed_color_info: "Info (blue)", ed_color_row_icon: "Row icons (all)",
     ed_color_live_banner: "Live banner", ed_color_icon: "Icon color {c}",
+    tab_gallery: "Gallery",
+    exp_live: "Live view (wakes battery cameras)", exp_gallery: "Recording gallery", exp_push: "Push notification with image",
+    acc_live: "Live view", live_refresh: "Refresh still image", live_start: "Start live stream", live_stop: "Stop stream",
+    live_loading: "Loading image …", live_stream_loading: "Starting stream …", live_error: "Image not available", live_unavailable: "Camera not reachable",
+    live_battery_hint: "Battery camera: an image wakes the camera and uses battery.", live_stream_failed: "Stream could not be started, showing still images.",
+    gal_empty: "No recordings found.", gal_loading: "Loading recordings …", gal_open_hint: "Expand to load the recordings.",
+    gal_error: "Recordings could not be loaded: {e}", gal_reload: "Reload", gal_count: "{n} recordings", gal_limit: "Number can be set in the integration options (currently {n}).",
+    gal_no_thumb: "The Reolink integration provides no preview images for recordings. Above you see the current camera image.", gal_snapshot: "Current camera image", gal_snapshot_load: "Load camera image",
+    gal_play_loading: "Loading video …", gal_play_failed: "The video cannot be played here.", gal_open_ha: "Open in Home Assistant", gal_close: "Close",
+    err_gallery_failed: "Recordings could not be loaded", err_gallery_unavailable: "No recordings for this camera (no SD card or playback not supported)", err_no_push_target: "No smartphone selected",
+    acc_push: "Push notifications", push_targets: "Smartphones", push_detections: "Detections", push_cooldown: "Lock time", push_path: "Dashboard path",
+    push_test: "Send test message", push_test_hint: "Sends a message with the current image to the selected smartphones. Tapping it opens the live view.",
+    push_none: "No smartphone selected. Choose under Configure → Experimental features.", opt_gallery_count: "Gallery videos per camera",
+    push_test_sent: "Sending test message …",
+    ed_live_auto: "Load still image automatically when the popup opens",
   },
   nl: {
     tab_cameras: "Camera's", tab_battery: "Batterij", tab_detections: "Detecties", tab_updates: "Updates",
@@ -268,7 +296,6 @@ const I18N = {
     ev_offline: "offline", ev_online: "weer online", ev_battery_low: "batterij laag",
     ev_battery_critical: "batterij kritiek", ev_update_available: "update beschikbaar",
     exp_state_on: "actief", exp_state_off: "uit",
-    exp_overview: "Overzicht (alleen lezen)", exp_sensors: "Overzichtssensoren", exp_events: "HA-gebeurtenissen",
     exp_controls: "Bediening (schrijft)", exp_ptz: "PTZ (schrijft)", exp_refresh: "Verversen/wekken (schrijft)",
     exp_intro: "Deze functies zijn ongetest. Ze zijn alleen zichtbaar als de hoofdschakelaar en de functie zelf aan staan.",
     resp_ok: "Klaar", resp_error: "Mislukt: {e}",
@@ -291,6 +318,21 @@ const I18N = {
     ed_color_tab_active: "Actieve tab", ed_color_success: "Succes (groen)", ed_color_warning: "Waarschuwing (oranje)",
     ed_color_error: "Fout (rood)", ed_color_info: "Info (blauw)", ed_color_row_icon: "Rijpictogrammen (alle)",
     ed_color_live_banner: "Live-banner", ed_color_icon: "Pictogramkleur {c}",
+    tab_gallery: "Galerij",
+    exp_live: "Live-beeld (wekt accu-camera's)", exp_gallery: "Galerij van opnames", exp_push: "Pushmelding met beeld",
+    acc_live: "Live-beeld", live_refresh: "Stilstaand beeld verversen", live_start: "Livestream starten", live_stop: "Stream stoppen",
+    live_loading: "Beeld laden …", live_stream_loading: "Stream starten …", live_error: "Beeld niet beschikbaar", live_unavailable: "Camera niet bereikbaar",
+    live_battery_hint: "Accu-camera: een beeld wekt de camera en kost batterij.", live_stream_failed: "Stream kon niet starten, losse beelden worden getoond.",
+    gal_empty: "Geen opnames gevonden.", gal_loading: "Opnames laden …", gal_open_hint: "Uitklappen om de opnames te laden.",
+    gal_error: "Opnames konden niet worden geladen: {e}", gal_reload: "Opnieuw laden", gal_count: "{n} opnames", gal_limit: "Aantal instelbaar in de opties van de integratie (nu {n}).",
+    gal_no_thumb: "De Reolink-integratie levert geen voorbeeldbeelden voor opnames. Hierboven zie je het actuele camerabeeld.", gal_snapshot: "Actueel camerabeeld", gal_snapshot_load: "Camerabeeld laden",
+    gal_play_loading: "Video laden …", gal_play_failed: "De video kan hier niet worden afgespeeld.", gal_open_ha: "Openen in Home Assistant", gal_close: "Sluiten",
+    err_gallery_failed: "Opnames konden niet worden geladen", err_gallery_unavailable: "Geen opnames voor deze camera (geen SD-kaart of afspelen niet ondersteund)", err_no_push_target: "Geen smartphone gekozen",
+    acc_push: "Pushmeldingen", push_targets: "Smartphones", push_detections: "Detecties", push_cooldown: "Blokkeertijd", push_path: "Dashboardpad",
+    push_test: "Testbericht verzenden", push_test_hint: "Verstuurt een bericht met het actuele beeld naar de gekozen smartphones. Tikken erop opent het live-beeld.",
+    push_none: "Geen smartphone gekozen. Kies onder Configureren → Experimentele functies.", opt_gallery_count: "Galerijvideo's per camera",
+    push_test_sent: "Testbericht wordt verzonden …",
+    ed_live_auto: "Stilstaand beeld automatisch laden bij openen van de popup",
   },
 };
 
@@ -392,7 +434,25 @@ ha-card{padding:0 0 12px;overflow:hidden}
 .popup{width:100%;max-width:440px;max-height:86vh;display:flex;flex-direction:column;border-radius:12px;background:var(--card-background-color,#fff);color:var(--primary-text-color);box-shadow:0 8px 32px rgba(0,0,0,.35)}
 .phead{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--divider-color)}
 .phead .t{flex:1;font-weight:600;font-size:1.05rem;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.pbody{padding:12px;overflow:auto;display:flex;flex-direction:column;gap:8px}
+.pbody{padding:12px;overflow-y:scroll;overflow-x:hidden;min-height:0;flex:1 1 auto;display:flex;flex-direction:column;gap:8px;scrollbar-width:thin;scrollbar-color:var(--rm-rowicon) transparent;-webkit-overflow-scrolling:touch}
+.pbody>*{flex:none}
+.pbody::-webkit-scrollbar{width:8px}
+.pbody::-webkit-scrollbar-thumb{background:var(--rm-rowicon);border-radius:4px}
+.live{display:flex;flex-direction:column;gap:6px}
+.livebox{position:relative;width:100%;aspect-ratio:16/9;background:#000;border-radius:8px;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.livebox img,.livebox video,.livebox>*{width:100%;height:100%;object-fit:contain;display:block}
+.livemsg{color:#ddd;font-size:.85rem;padding:8px;text-align:center}
+.livemsg.err{color:#ffb4ab}
+.livebar{display:flex;gap:8px;flex-wrap:wrap}
+.settings-accordion{flex:none}
+.galsnap{display:flex;gap:10px;align-items:center;margin:6px 0}
+.galsnap img{width:96px;aspect-ratio:16/9;object-fit:cover;border-radius:6px;background:#000}
+.galsnap span{font-size:.8rem;color:var(--secondary-text-color)}
+.galrow{display:flex;gap:10px;align-items:center;padding:6px 0;border-top:1px solid var(--divider-color);cursor:pointer}
+.galthumb{width:72px;aspect-ratio:16/9;border-radius:6px;background:color-mix(in srgb,var(--primary-text-color) 10%,transparent);display:flex;align-items:center;justify-content:center;overflow:hidden;flex:none}
+.galthumb img{width:100%;height:100%;object-fit:cover}
+.galthumb ha-icon{--mdc-icon-size:26px;color:var(--rm-rowicon)}
+.player{max-width:720px}
 .ent{display:flex;gap:8px;align-items:center;padding:4px 0;border-top:1px solid var(--divider-color);font-size:.82rem}
 .ent:first-child{border-top:0}
 .ent .n{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer}
@@ -412,15 +472,28 @@ class ReolinkManagerCard extends HTMLElement {
     this._err = null;
     this._unsub = null;
     this._last = "";
+    this._popLast = "";
     this._toast = null;
     this._toastTimer = null;
-    this._ui = { tab: null, filter: "all", sort: null, search: "", popup: null, acc: {}, confirm: null, details: {}, detailsAt: 0, detailsErr: null };
+    this._live = null;
+    this._deepDone = null;
+    this._ui = { tab: null, filter: "all", sort: null, search: "", popup: null, acc: {}, confirm: null, details: {}, detailsAt: 0, detailsErr: null, gal: {}, player: null };
     const root = this.shadowRoot;
+    root.innerHTML = `<style>${CSS}</style><style id="colors"></style><div id="main"></div><div id="pop"></div><div id="ov"></div>`;
+    this._elMain = root.getElementById("main");
+    this._elColors = root.getElementById("colors");
+    this._elPop = root.getElementById("pop");
+    this._elOv = root.getElementById("ov");
     root.addEventListener("click", (e) => this._onClick(e));
     root.addEventListener("input", (e) => this._onInput(e));
     root.addEventListener("change", (e) => this._onChange(e));
     root.addEventListener("toggle", (e) => this._onToggle(e), true);
-    this._keyHandler = (e) => { if (e.key === "Escape" && this._ui.popup) { this._ui.popup = null; this._render(); } };
+    this._keyHandler = (e) => {
+      if (e.key !== "Escape") return;
+      if (this._ui.player) this._closePlayer();
+      else if (this._ui.popup) this._closePopup();
+    };
+    this._locHandler = () => this._checkDeepLink();
   }
 
   static getConfigElement() { return document.createElement("reolink-manager-card-editor"); }
@@ -437,19 +510,26 @@ class ReolinkManagerCard extends HTMLElement {
     const first = !this._hass;
     const langChanged = this._hass && this._hass.language !== hass.language;
     this._hass = hass;
+    if (this._live && this._live.card) this._live.card.hass = hass;
     if (first) this._subscribe();
     else if (langChanged) this._render();
   }
 
   connectedCallback() {
     document.addEventListener("keydown", this._keyHandler);
+    window.addEventListener("location-changed", this._locHandler);
+    window.addEventListener("popstate", this._locHandler);
     this._timer = setInterval(() => this._tick(), 30000);
     if (this._hass) this._subscribe();
   }
 
   disconnectedCallback() {
     document.removeEventListener("keydown", this._keyHandler);
+    window.removeEventListener("location-changed", this._locHandler);
+    window.removeEventListener("popstate", this._locHandler);
     clearInterval(this._timer);
+    this._closePopup();
+    this._closePlayer();
     if (this._unsub) { try { this._unsub(); } catch (_) { /* ignorieren */ } this._unsub = null; }
   }
 
@@ -475,6 +555,7 @@ class ReolinkManagerCard extends HTMLElement {
       this._data = ev.data;
       if (this._ui.popup) this._loadDetails(this._ui.popup, false);
       this._render();
+      this._checkDeepLink();
     } else if (ev.kind === "response") {
       const p = ev.data || {};
       if (p.status === "ok") this._showToast(this._t("resp_ok"), false);
@@ -498,7 +579,10 @@ class ReolinkManagerCard extends HTMLElement {
 
   /* ---------- Hilfen ---------- */
   _exp(feature) {
-    return !!(this._config.show_experimental && this._data && this._data.experimental && this._data.experimental.features.includes(feature));
+    const d = this._data;
+    if (!d || !d.experimental) return false;
+    if ((d.experimental.checked || []).includes(feature)) return true;
+    return !!(this._config.show_experimental && d.experimental.features.includes(feature));
   }
   _tabAvailable(tab) {
     const m = TAB_META[tab];
@@ -541,19 +625,23 @@ class ReolinkManagerCard extends HTMLElement {
   _render() {
     if (!this._config) return;
     const root = this.shadowRoot;
+    const vars = this._colorVars();
+    if (vars !== this._elColors.textContent) this._elColors.textContent = vars;
     const html = this._html();
-    if (html === this._last) return;
-    const ae = root.activeElement;
-    const fk = ae && ae.dataset ? ae.dataset.fk : null;
-    const ss = ae && typeof ae.selectionStart === "number" ? [ae.selectionStart, ae.selectionEnd] : null;
-    const scrolls = [...root.querySelectorAll("[data-scroll]")].map((e) => [e.dataset.scroll, e.scrollTop]);
-    root.innerHTML = html;
-    this._last = html;
-    scrolls.forEach(([k, top]) => { const el = root.querySelector(`[data-scroll="${k}"]`); if (el) el.scrollTop = top; });
-    if (fk) {
-      const el = root.querySelector(`[data-fk="${fk}"]`);
-      if (el) { el.focus(); if (ss && el.setSelectionRange) { try { el.setSelectionRange(ss[0], ss[1]); } catch (_) { /* ignorieren */ } } }
+    if (html !== this._last) {
+      const ae = root.activeElement;
+      const fk = ae && ae.dataset ? ae.dataset.fk : null;
+      const ss = ae && typeof ae.selectionStart === "number" ? [ae.selectionStart, ae.selectionEnd] : null;
+      const scrolls = [...this._elMain.querySelectorAll("[data-scroll]")].map((e) => [e.dataset.scroll, e.scrollTop]);
+      this._elMain.innerHTML = html;
+      this._last = html;
+      scrolls.forEach(([k, top]) => { const el = this._elMain.querySelector(`[data-scroll="${k}"]`); if (el) el.scrollTop = top; });
+      if (fk) {
+        const el = this._elMain.querySelector(`[data-fk="${fk}"]`);
+        if (el) { el.focus(); if (ss && el.setSelectionRange) { try { el.setSelectionRange(ss[0], ss[1]); } catch (_) { /* ignorieren */ } } }
+      }
     }
+    this._syncPopup();
   }
 
   _colorVars() {
@@ -582,8 +670,7 @@ class ReolinkManagerCard extends HTMLElement {
       body = this._banners() + this._tabsHtml() + this._contentHtml();
     }
     const head = c.show_title !== false && c.title ? `<div class="header">${esc(c.title)}</div>` : "";
-    return `<style>${CSS}</style><style>${this._colorVars()}</style>
-<ha-card style="zoom:${zoom}">${head}${body}</ha-card>${this._popupHtml()}${this._toast ? `<div class="toast${this._toast.isErr ? " err" : ""}">${esc(this._toast.text)}</div>` : ""}`;
+    return `<ha-card style="zoom:${zoom}">${head}${body}</ha-card>${this._toast ? `<div class="toast${this._toast.isErr ? " err" : ""}">${esc(this._toast.text)}</div>` : ""}`;
   }
 
   _banners() {
@@ -620,6 +707,7 @@ class ReolinkManagerCard extends HTMLElement {
   _contentHtml() {
     const tab = this._currentTab();
     if (tab === "bridge") return this._settingsHtml();
+    if (tab === "gallery") return this._barHtml() + this._galleryHtml();
     return this._statsHtml() + this._barHtml() + this._listHtml(tab);
   }
 
@@ -650,6 +738,7 @@ class ReolinkManagerCard extends HTMLElement {
       if (tab === "detections") return d.detections.length > 0;
       if (tab === "updates") return !!d.update;
       if (tab === "storage") return !!d.storage;
+      if (tab === "gallery") return !!d.gallery;
       if (tab === "controls") return !!d.controls && Object.keys(d.controls).length > 0;
       return true;
     });
@@ -792,18 +881,29 @@ class ReolinkManagerCard extends HTMLElement {
       this._line(t("opt_battery_low"), `${o.battery_low} %`) + this._line(t("opt_battery_critical"), `${o.battery_critical} %`) +
       this._line(t("opt_offline_delay"), `${o.offline_delay} s`) + this._line(t("opt_events"), esc(t(o.events_enabled ? "on" : "off"))) +
       this._line(t("opt_detections"), o.detection_types.map((k) => esc(t(`det_${k}`))).join(", ") || "–") +
-      this._line(t("opt_read_only"), esc(t(this._config.read_only ? "on" : "off"))));
+      this._line(t("opt_read_only"), esc(t(this._config.read_only ? "on" : "off"))) +
+      (o.gallery_count != null ? this._line(t("opt_gallery_count"), String(o.gallery_count)) : ""));
 
     if (canAct) {
       h += this._acc("maintenance", "mdi:wrench", t("acc_maintenance"),
         `<div class="note">${esc(t("maint_rescan_hint"))}</div><div class="btns"><button class="btn" data-act="rescan">${this._ico("mdi:magnify-scan")}${esc(t("maint_rescan"))}</button></div>`);
     }
 
-    if (this._exp("overview")) {
+    {
       const ev = d.events || [];
       h += this._acc("events", "mdi:history", t("acc_events"),
         ev.length ? ev.slice(0, 50).map((x) => this._line(`${x.name} · ${t(`ev_${x.type}`)}`, this._ts(x.t))).join("") : `<div class="note">${esc(t("events_empty"))}</div>`,
         { meta: String(ev.length) });
+    }
+
+    if (this._exp("push")) {
+      const targets = o.push_targets || [];
+      let pb = this._line(t("push_targets"), targets.length ? targets.map((x) => esc(String(x).replace(/^notify\./, ""))).join(", ") : "–") +
+        this._line(t("push_detections"), (o.push_detections || []).map((k) => esc(t(`det_${k}`))).join(", ") || "–") +
+        this._line(t("push_cooldown"), `${o.push_cooldown} s`) + this._line(t("push_path"), esc(o.push_path || "–"));
+      if (!targets.length) pb += `<div class="note warn">${esc(t("push_none"))}</div>`;
+      if (canAct && targets.length) pb += `<div class="note">${esc(t("push_test_hint"))}</div><div class="btns"><button class="btn" data-act="testpush">${this._ico("mdi:bell-ring-outline")}${esc(t("push_test"))}</button></div>`;
+      h += this._acc("push", "mdi:bell-badge-outline", t("acc_push"), pb, { meta: `<span class="expbadge">${esc(t("badge_experimental"))}</span>` });
     }
 
     const ex = d.experimental;
@@ -818,14 +918,43 @@ class ReolinkManagerCard extends HTMLElement {
     return `<div class="settings" data-scroll="settings">${h}</div>`;
   }
 
-  /* ---------- Popup ---------- */
-  _popupHtml() {
+  /* ---------- Popup (bleibt beim Neuzeichnen bestehen: Live-Bild und Scrollposition) ---------- */
+  _device(id) { return this._data && (this._data.devices || []).find((x) => x.device === id); }
+
+  _syncPopup() {
     const id = this._ui.popup;
-    if (!id || !this._data) return "";
-    const d = (this._data.devices || []).find((x) => x.device === id);
-    if (!d) return "";
+    const d = id && this._device(id);
+    if (!d) {
+      if (this._elPop.firstChild) { this._elPop.textContent = ""; this._popLast = ""; this._destroyLive(); }
+      return;
+    }
+    if (this._elPop.dataset.dev !== id || !this._elPop.firstChild) {
+      this._elPop.dataset.dev = id;
+      this._popLast = "";
+      this._elPop.innerHTML = `<div class="backdrop" data-act="backdrop"><div class="popup" role="dialog"><div class="phead"><span class="ptitle"></span><span class="t"></span><button class="btn icon" data-act="close" title="×">${this._ico("mdi:close")}</button></div><div class="pbody" id="pbody"><div id="livewrap"></div><div id="pdyn"></div></div></div></div>`;
+      this._buildLive(d);
+    }
+    const head = `${this._ico(KIND_ICON[d.kind] || "mdi:cctv")}`;
+    const ptitle = this._elPop.querySelector(".ptitle");
+    if (ptitle.innerHTML !== head) ptitle.innerHTML = head;
+    const t = this._elPop.querySelector(".phead .t");
+    if (t.textContent !== d.name) t.textContent = d.name;
+    const html = this._popupBodyHtml(d);
+    if (html !== this._popLast) {
+      this._popLast = html;
+      this._elPop.querySelector("#pdyn").innerHTML = html;
+    }
+  }
+
+  _closePopup() {
+    this._ui.popup = null;
+    this._ui.confirm = null;
+    this._syncPopup();
+  }
+
+  _popupBodyHtml(d) {
     const t = (k, v) => this._t(k, v);
-    const det = this._ui.details[id];
+    const det = this._ui.details[d.device];
     let h = "";
     const sleepTxt = d.sleeping == null ? t("unknown") : t(d.sleeping ? "sleeping" : "awake");
     let info = this._line(t("info_model"), esc(d.model || "–")) + this._line(t("info_kind"), esc(t(`kind_${d.kind}`)));
@@ -851,7 +980,7 @@ class ReolinkManagerCard extends HTMLElement {
     }
 
     const writable = this._canWrite();
-    if (writable && this._exp("ptz") && d.ptz) h += this._acc("p:ptz", "mdi:pan", t("acc_ptz"), this._ptzHtml(d));
+    if (writable && this._exp("ptz") && d.ptz) h += this._acc("p:ptz", "mdi:pan", t("acc_ptz"), this._ptzHtml(d), { open: true });
     if (writable && this._exp("controls")) h += this._controlsHtml(d, det);
     if (writable && this._exp("refresh") && d.refreshable) {
       const confirm = this._ui.confirm === `refresh:${d.device}`;
@@ -864,8 +993,237 @@ class ReolinkManagerCard extends HTMLElement {
     else if (!det) ents = `<div class="note">${esc(t("loading"))}</div>`;
     else ents = det.entities.map((e) => `<div class="ent"><span class="n" data-act="more" data-ent="${esc(e.entity)}" title="${esc(e.entity)}">${esc(e.name)}</span><span class="r">${esc(e.role === "other" || e.role.endsWith("_other") ? t("role_unclassified") : e.role)}</span><span>${esc(e.state ?? "–")}${e.unit ? ` ${esc(e.unit)}` : ""}</span><button class="btn small icon" data-act="copy" data-copy="${esc(e.entity)}" title="${esc(t("copy"))}">${this._ico("mdi:content-copy")}</button></div>`).join("");
     h += this._acc("p:ents", "mdi:format-list-bulleted", t("acc_entities"), ents, { meta: det ? String(det.entities.length) : "" });
+    return h;
+  }
 
-    return `<div class="backdrop" data-act="backdrop"><div class="popup" role="dialog"><div class="phead">${this._ico(KIND_ICON[d.kind] || "mdi:cctv")}<span class="t">${esc(d.name)}</span><button class="btn icon" data-act="close" title="×">${this._ico("mdi:close")}</button></div><div class="pbody" data-scroll="popup">${h}</div></div></div>`;
+  /* ---------- Live-Bild ---------- */
+  _buildLive(d) {
+    this._destroyLive();
+    const wrap = this._elPop.querySelector("#livewrap");
+    if (!wrap || !d.live || !this._exp("live")) return;
+    const t = (k) => this._t(k);
+    const node = document.createElement("div");
+    node.className = "live";
+    node.innerHTML = `<div class="livebox"><div class="livemsg"></div></div><div class="livebar"><button class="btn small" data-act="livestill">${this._ico("mdi:image-refresh-outline")}<span>${esc(t("live_refresh"))}</span></button><button class="btn small primary" data-act="livestream">${this._ico("mdi:play-circle-outline")}<span>${esc(t("live_start"))}</span></button></div>${d.battery ? `<div class="note warn">${esc(t("live_battery_hint"))}</div>` : ""}`;
+    wrap.appendChild(node);
+    this._live = { dev: d.device, entity: d.live.entity, mode: "idle", node, box: node.querySelector(".livebox"), card: null, seq: 0 };
+    if (this._pendingStream) { this._pendingStream = false; this._liveStream(); }
+    else if (this._config.live_auto !== false) this._liveStill();
+  }
+
+  _destroyLive() {
+    if (this._live) { this._live.seq += 1; this._live.card = null; }
+    this._live = null;
+  }
+
+  _liveButtons() {
+    const L = this._live;
+    if (!L) return;
+    const b = L.node.querySelector('[data-act="livestream"]');
+    const stream = L.mode === "stream";
+    b.innerHTML = `${this._ico(stream ? "mdi:stop-circle-outline" : "mdi:play-circle-outline")}<span>${esc(this._t(stream ? "live_stop" : "live_start"))}</span>`;
+    L.node.querySelector('[data-act="livestill"]').disabled = stream;
+  }
+
+  _liveMessage(key, isErr) {
+    const L = this._live;
+    if (!L) return;
+    L.box.innerHTML = `<div class="livemsg${isErr ? " err" : ""}">${esc(this._t(key))}</div>`;
+  }
+
+  async _stillUrl(entity) {
+    const st = this._hass.states[entity];
+    if (!st || st.state === "unavailable") throw new Error("unavailable");
+    let url = st.attributes && st.attributes.entity_picture;
+    if (!url) {
+      const r = await this._hass.callWS({ type: "auth/sign_path", path: `/api/camera_proxy/${entity}`, expires: 120 });
+      url = r.path;
+    }
+    url += `${url.includes("?") ? "&" : "?"}_=${Date.now()}`;
+    return typeof this._hass.hassUrl === "function" ? this._hass.hassUrl(url) : url;
+  }
+
+  async _liveStill() {
+    const L = this._live;
+    if (!L) return;
+    const seq = ++L.seq;
+    L.mode = "still";
+    L.card = null;
+    this._liveButtons();
+    this._liveMessage("live_loading", false);
+    try {
+      const url = await this._stillUrl(L.entity);
+      if (!this._live || this._live.seq !== seq) return;
+      const img = document.createElement("img");
+      img.alt = "";
+      img.onload = () => { if (this._live && this._live.seq === seq) L.box.replaceChildren(img); };
+      img.onerror = () => { if (this._live && this._live.seq === seq) this._liveMessage("live_error", true); };
+      img.src = url;
+    } catch (_) {
+      if (this._live && this._live.seq === seq) this._liveMessage("live_unavailable", true);
+    }
+  }
+
+  async _liveStream() {
+    const L = this._live;
+    if (!L || L.mode === "stream") return;
+    const seq = ++L.seq;
+    L.mode = "stream";
+    this._liveButtons();
+    this._liveMessage("live_stream_loading", false);
+    try {
+      if (typeof window.loadCardHelpers !== "function") throw new Error("no helpers");
+      const helpers = await window.loadCardHelpers();
+      const card = await helpers.createCardElement({ type: "picture-entity", entity: L.entity, camera_view: "live", show_state: false, show_name: false });
+      if (!this._live || this._live.seq !== seq) return;
+      card.hass = this._hass;
+      card.style.setProperty("--ha-card-box-shadow", "none");
+      card.style.setProperty("--ha-card-border-width", "0");
+      L.card = card;
+      L.box.replaceChildren(card);
+    } catch (_) {
+      if (!this._live || this._live.seq !== seq) return;
+      const st = this._hass.states[L.entity];
+      const token = st && st.attributes && st.attributes.access_token;
+      if (token) {
+        const img = document.createElement("img");
+        img.alt = "";
+        img.onerror = () => { if (this._live && this._live.seq === seq) this._liveMessage("live_error", true); };
+        img.src = `/api/camera_proxy_stream/${L.entity}?token=${encodeURIComponent(token)}`;
+        L.box.replaceChildren(img);
+        const note = document.createElement("div");
+        note.className = "note warn";
+        note.textContent = this._t("live_stream_failed");
+        L.box.appendChild(note);
+      } else {
+        this._liveMessage("live_unavailable", true);
+      }
+    }
+  }
+
+  _liveToggleStream() {
+    if (!this._live) return;
+    if (this._live.mode === "stream") this._liveStill();
+    else this._liveStream();
+  }
+
+  /* Ein Klick auf die PTZ-Steuerung schaltet das Bild automatisch auf den Stream. */
+  _livePtzHook() {
+    if (this._live && this._live.mode !== "stream") this._liveStream();
+  }
+
+  /* ---------- Deep-Link aus der Push-Nachricht: ?reolink_live=<Geräte-ID> ---------- */
+  _checkDeepLink() {
+    if (!this._data || !this._config) return;
+    let dev = null;
+    try { dev = new URLSearchParams(window.location.search).get("reolink_live"); } catch (_) { return; }
+    if (!dev || dev === this._deepDone) return;
+    const d = this._device(dev);
+    if (!d || !d.live) return;
+    this._deepDone = dev;
+    try {
+      const u = new URL(window.location.href);
+      u.searchParams.delete("reolink_live");
+      window.history.replaceState(window.history.state, "", u.pathname + u.search + u.hash);
+    } catch (_) { /* ignorieren */ }
+    this._openPopup(dev, { stream: true });
+  }
+
+  /* ---------- Galerie ---------- */
+  _galleryHtml() {
+    const t = (k, v) => this._t(k, v);
+    const list = this._devicesFor("gallery");
+    if (!list.length) return `<div class="list"><div class="empty">${esc(t(this._ui.search.trim() ? "empty_filter" : "empty_list"))}</div></div>`;
+    const n = this._data.options.gallery_count;
+    let h = `<div class="settings" data-scroll="list"><div class="note">${esc(t("gal_limit", { n }))}</div>`;
+    for (const d of list) {
+      const g = this._ui.gal[d.device];
+      let body = "";
+      if (!g) body = `<div class="note">${esc(t("gal_open_hint"))}</div>`;
+      else if (g.loading) body = `<div class="note">${esc(t("gal_loading"))}</div>`;
+      else if (g.error) body = `<div class="note err">${esc(t("gal_error", { e: this._errText(g.error) }))}</div><div class="btns"><button class="btn small" data-act="galreload" data-dev="${esc(d.device)}">${this._ico("mdi:refresh")}${esc(t("gal_reload"))}</button></div>`;
+      else {
+        body = this._gallerySnapshotHtml(d, g);
+        body += g.items.length ? g.items.map((it) => this._galleryRowHtml(d, it)).join("") : `<div class="note">${esc(t("gal_empty"))}</div>`;
+        if (g.items.length && !g.items.some((it) => it.thumbUrl)) body += `<div class="note">${esc(t("gal_no_thumb"))}</div>`;
+        body += `<div class="btns"><button class="btn small" data-act="galreload" data-dev="${esc(d.device)}">${this._ico("mdi:refresh")}${esc(t("gal_reload"))}</button></div>`;
+      }
+      h += this._acc(`g:${d.device}`, "mdi:filmstrip", d.name, body, { meta: g && g.items ? esc(t("gal_count", { n: g.items.length })) : "" });
+    }
+    return `${h}</div>`;
+  }
+
+  _gallerySnapshotHtml(d, g) {
+    const t = (k) => this._t(k);
+    if (g.snapshot) return `<div class="galsnap"><img src="${esc(g.snapshot)}" alt="${esc(t("gal_snapshot"))}"><span>${esc(t("gal_snapshot"))}</span></div>`;
+    if (d.battery) return `<div class="btns"><button class="btn small" data-act="galsnap" data-dev="${esc(d.device)}">${this._ico("mdi:image-outline")}${esc(t("gal_snapshot_load"))}</button></div><div class="note warn">${esc(t("live_battery_hint"))}</div>`;
+    return "";
+  }
+
+  _galleryRowHtml(d, it) {
+    const thumb = it.thumbUrl ? `<img src="${esc(it.thumbUrl)}" alt="">` : this._ico("mdi:play-circle-outline");
+    return `<div class="galrow" data-act="play" data-id="${esc(it.id)}" data-title="${esc(d.name)} ${esc(it.day)} ${esc(it.title)}"><div class="galthumb">${thumb}</div><div class="main"><div class="name">${esc(it.title)}</div><div class="sub">${esc(it.day)}</div></div>${this._ico("mdi:chevron-right")}</div>`;
+  }
+
+  async _loadGallery(dev, force) {
+    const cur = this._ui.gal[dev];
+    if (cur && (cur.loading || (!force && !cur.error))) return;
+    this._ui.gal[dev] = { loading: true };
+    this._render();
+    try {
+      const msg = { type: `${WS}/gallery`, device: dev };
+      if (this._config.entry_id) msg.entry_id = this._config.entry_id;
+      const res = await this._hass.callWS(msg);
+      const items = res.items || [];
+      await Promise.all(items.map(async (it) => {
+        const th = it.thumbnail;
+        if (!th) return;
+        try {
+          if (/^https?:/.test(th)) it.thumbUrl = th;
+          else if (th.startsWith("/")) it.thumbUrl = this._hass.hassUrl((await this._hass.callWS({ type: "auth/sign_path", path: th, expires: 3600 })).path);
+        } catch (_) { /* ohne Vorschau */ }
+      }));
+      this._ui.gal[dev] = { items };
+      const dd = this._device(dev);
+      if (dd && dd.gallery && !dd.battery) this._loadGallerySnapshot(dev);
+    } catch (e) {
+      this._ui.gal[dev] = { error: (e && (e.code === "unauthorized" ? "no_admin" : e.code)) || "gallery_failed" };
+    }
+    this._render();
+  }
+
+  async _loadGallerySnapshot(dev) {
+    const d = this._device(dev);
+    const g = this._ui.gal[dev];
+    if (!d || !g || !d.gallery) return;
+    try { g.snapshot = await this._stillUrl(d.gallery.entity); } catch (_) { /* ohne Bild */ }
+    this._render();
+  }
+
+  async _openPlayer(id, title) {
+    const t = (k) => this._t(k);
+    this._ui.player = id;
+    const ov = this._elOv;
+    ov.innerHTML = `<div class="backdrop" data-act="backdrop"><div class="popup player"><div class="phead"><span class="t">${esc(title)}</span><button class="btn icon" data-act="closeplayer" title="×">${this._ico("mdi:close")}</button></div><div class="pbody"><div class="livebox"><div class="livemsg">${esc(t("gal_play_loading"))}</div></div><div class="btns"><a class="btn small" href="/media-browser/browser/app%2Cmedia-source%3A%2F%2Freolink" target="_top">${this._ico("mdi:open-in-new")}${esc(t("gal_open_ha"))}</a></div></div></div></div>`;
+    const box = ov.querySelector(".livebox");
+    const fail = () => { if (this._ui.player === id) box.innerHTML = `<div class="livemsg err">${esc(t("gal_play_failed"))}</div>`; };
+    try {
+      const res = await this._hass.callWS({ type: "media_source/resolve_media", media_content_id: id, expires: 3600 });
+      if (this._ui.player !== id) return;
+      const video = document.createElement("video");
+      video.controls = true;
+      video.autoplay = true;
+      video.playsInline = true;
+      video.onerror = fail;
+      if (/mpegurl/i.test(res.mime_type || "") && !video.canPlayType(res.mime_type)) { fail(); return; }
+      video.src = typeof this._hass.hassUrl === "function" ? this._hass.hassUrl(res.url) : res.url;
+      box.replaceChildren(video);
+    } catch (_) { fail(); }
+  }
+
+  _closePlayer() {
+    this._ui.player = null;
+    this._elOv.textContent = "";
   }
 
   _ptzHtml(d) {
@@ -912,7 +1270,9 @@ class ReolinkManagerCard extends HTMLElement {
   /* ---------- Ereignisse ---------- */
   _onToggle(e) {
     const el = e.target;
-    if (el && el.tagName === "DETAILS" && el.dataset.k) this._ui.acc[el.dataset.k] = el.open;
+    if (!el || el.tagName !== "DETAILS" || !el.dataset.k) return;
+    this._ui.acc[el.dataset.k] = el.open;
+    if (el.open && el.dataset.k.startsWith("g:")) this._loadGallery(el.dataset.k.slice(2), false);
   }
 
   _onInput(e) {
@@ -933,14 +1293,24 @@ class ReolinkManagerCard extends HTMLElement {
     const el = e.target.closest("[data-act]");
     if (!el) return;
     const act = el.dataset.act;
-    if (act === "backdrop") { if (e.target === el) { this._ui.popup = null; this._ui.confirm = null; this._render(); } return; }
+    if (act === "backdrop") {
+      if (e.target === el) { if (el.closest("#ov")) this._closePlayer(); else this._closePopup(); }
+      return;
+    }
     e.stopPropagation();
     switch (act) {
       case "tab": this._ui.tab = el.dataset.tab; this._ui.filter = "all"; this._render(); break;
       case "filter": this._ui.filter = this._ui.filter === el.dataset.filter ? "all" : el.dataset.filter; this._render(); break;
       case "open": this._openPopup(el.dataset.dev); break;
-      case "close": this._ui.popup = null; this._ui.confirm = null; this._render(); break;
-      case "ptz": this._action({ action: "set_entity", entity: el.dataset.ent, op: "press" }); break;
+      case "close": this._closePopup(); break;
+      case "closeplayer": this._closePlayer(); break;
+      case "livestill": this._liveStill(); break;
+      case "livestream": this._liveToggleStream(); break;
+      case "galreload": this._loadGallery(el.dataset.dev, true); break;
+      case "galsnap": this._loadGallerySnapshot(el.dataset.dev); break;
+      case "play": this._openPlayer(el.dataset.id, el.dataset.title); break;
+      case "testpush": this._action({ action: "test_push" }); this._showToast(this._t("push_test_sent"), false); break;
+      case "ptz": this._action({ action: "set_entity", entity: el.dataset.ent, op: "press" }); this._livePtzHook(); break;
       case "toggle": this._action({ action: "set_entity", entity: el.dataset.ent, op: el.dataset.on === "1" ? "turn_on" : "turn_off" }); break;
       case "siren": this._confirm(`siren:${el.dataset.ent}`, () => this._action({ action: "set_entity", entity: el.dataset.ent, op: "turn_on" })); break;
       case "refresh": this._confirm(`refresh:${el.dataset.dev}`, () => this._action({ action: "refresh_device", device: el.dataset.dev })); break;
@@ -970,7 +1340,8 @@ class ReolinkManagerCard extends HTMLElement {
     try { await navigator.clipboard.writeText(text); this._showToast(this._t("copied"), false); } catch (_) { /* ignorieren */ }
   }
 
-  _openPopup(dev) {
+  _openPopup(dev, opts) {
+    this._pendingStream = !!(opts && opts.stream);
     this._ui.popup = dev;
     this._ui.detailsErr = null;
     this._render();
@@ -1063,6 +1434,7 @@ class ReolinkManagerCardEditor extends HTMLElement {
       ] },
       { type: "expandable", name: "", title: t("ed_group_edit"), flatten: true, schema: [
         { name: "read_only", selector: { boolean: {} } },
+        { name: "live_auto", selector: { boolean: {} } },
       ] },
       { type: "expandable", name: "", title: t("ed_group_experimental"), flatten: true, schema: [
         { name: "show_experimental", selector: { boolean: {} } },
@@ -1079,7 +1451,7 @@ class ReolinkManagerCardEditor extends HTMLElement {
       max_rows: "ed_max_rows", zoom: "ed_zoom", show_stats: "ed_show_stats", show_search: "ed_show_search",
       show_filter_bar: "ed_show_filter_bar", default_sort: "ed_default_sort", show_col_model: "ed_col_model",
       show_col_hub: "ed_col_hub", show_col_battery: "ed_col_battery", show_col_wifi: "ed_col_wifi", show_col_last: "ed_col_last",
-      read_only: "ed_read_only", show_experimental: "ed_show_experimental",
+      read_only: "ed_read_only", live_auto: "ed_live_auto", show_experimental: "ed_show_experimental",
     };
     return map[name] ? t(map[name]) : name;
   }

@@ -11,28 +11,39 @@ Reolink Manager ist eine Ergänzung für Home Assistant. Sie legt sich über die
 
 Der Manager liest nur die Geräte, Entitäten und Zustände, die die Reolink-Integration schon liefert. Er spricht **nicht selbst mit den Kameras**. Dadurch werden Akku-Kameras (z. B. Argus) nicht zusätzlich geweckt.
 
-> **Wichtig, Version 0.0.1:** Alles an dieser Version ist neu und **ungeprüft**. Die Funktionen sind deshalb standardmäßig **ausgeblendet** und müssen bewusst eingeschaltet werden (siehe [Experimentelle Funktionen](#experimentelle-funktionen)). Nichts wurde an echten Kameras getestet. Details in [EXPERIMENTELL.md](EXPERIMENTELL.md).
+> **Wichtig, Version 0.0.2:** Übersicht, Sensoren und Ereignisse hat Thorsten mit 0.0.1 auf seiner Installation bestätigt, sie sind jetzt **immer aktiv**. Neu sind Live-Bild, Galerie und Push-Nachrichten. Sie sind, wie Steuerung, PTZ und Aktualisieren/Wecken, **ungeprüft** und standardmäßig **ausgeblendet** (siehe [Experimentelle Funktionen](#experimentelle-funktionen)). Die neuen Funktionen wurden noch nicht an echten Kameras oder Smartphones getestet. Details in [EXPERIMENTELL.md](EXPERIMENTELL.md).
 
 ## Funktionsumfang
 
 | Kategorie (Tab) | Inhalt | Funktion |
 |---|---|---|
-| Kameras | Status (online, offline, Privatmodus), Schlafstatus, Batterie, WLAN-Signal | `overview` |
-| Batterie | Ladestand, Zustand, Temperatur, Warnstufen niedrig und kritisch | `overview` |
-| Erkennungen | Bewegung, Person, Fahrzeug, Haustier, Tier, Gesicht, Paket, Besucher, Babyschreien, Fahrrad, mit „zuletzt geändert“ | `overview` |
-| Updates | Firmware-Updates der Geräte mit installierter und neuer Version | `overview` |
-| Speicher | Belegung der SD-Karte bzw. des Hub-Speichers, soweit die Reolink-Integration sie liefert | `overview` |
+| Kameras | Status (online, offline, Privatmodus), Schlafstatus, Batterie, WLAN-Signal | immer |
+| Batterie | Ladestand, Zustand, Temperatur, Warnstufen niedrig und kritisch | immer |
+| Erkennungen | Bewegung, Person, Fahrzeug, Haustier, Tier, Gesicht, Paket, Besucher, Babyschreien, Fahrrad, mit „zuletzt geändert“ | immer |
+| Updates | Firmware-Updates der Geräte mit installierter und neuer Version | immer |
+| Speicher | Belegung der SD-Karte bzw. des Hub-Speichers, soweit die Reolink-Integration sie liefert | immer |
 | Steuerung | Privatmodus, Aufnahme, Push, Szene des Hubs, Sirene, Licht (schreibt) | `controls` |
-| Hub | Home Hub mit Anzahl der verbundenen Geräte und Szene | `overview` |
+| Galerie | Aufnahmen je Kamera als Aufklapp-Menü, niedrige Auflösung aus dem Medienbrowser, Anzahl in den Optionen, Abspielen im Overlay | `gallery` |
+| Hub | Home Hub mit Anzahl der verbundenen Geräte und Szene | immer |
 | Zahnrad | Version, Status der Reolink-Integration, Auswahl, Optionen, Wartung, Ereignisprotokoll, Experimentell | immer |
 
-Zusätzlich (alle experimentell): PTZ-Steuerung (`ptz`), Aktualisieren/Wecken (`refresh`), Übersichts-Sensoren (`sensors`), Ereignisse auf dem Home-Assistant-Bus (`events`).
+Immer aktiv (geprüft): die Kategorien oben, Übersichts-Sensoren (`sensors`) und Ereignisse auf dem Home-Assistant-Bus (`events`).
+
+Experimentell: Live-Bild im Popup (`live`), Galerie (`gallery`), Push-Nachrichten mit Bild bei Erkennung (`push`), PTZ-Steuerung (`ptz`), Aktualisieren/Wecken (`refresh`) und Steuerung (`controls`).
+
+Das Kamera-Popup hat jetzt einen sichtbaren Scrollbalken. Mit `live` zeigt es oben sofort ein Standbild; ein Knopf startet den Live-Stream, und ein Klick auf die PTZ-Steuerung schaltet automatisch auf den Stream.
 
 Die Geräteauswahl in den Optionen bestimmt, welche Kameras, Hubs und Gongs überhaupt erscheinen. Pro Kategorie gibt es in der Karte einen eigenen Schalter.
 
-## Neu in 0.0.1
+## Neu in 0.0.2
 
-Erste Veröffentlichung. Alle Funktionen sind neu und experimentell.
+- Popup: sichtbarer Scrollbalken, die Aufklapp-Menüs werden nicht mehr gequetscht
+- Live-Bild im Popup (`live`): Standbild sofort, Stream per Knopf, PTZ-Klick schaltet auf den Stream
+- Neue Kategorie Galerie (`gallery`): Aufklapp-Menü je Kamera mit den neuesten Aufnahmen (niedrige Auflösung), Anzahl in den Optionen
+- Push-Nachrichten (`push`): bei gewählten Erkennungen Nachricht mit aktuellem Bild an ein oder mehrere Smartphones; ein Tipp öffnet das Dashboard mit dem Live-Bild
+- Übersicht, Sensoren und Ereignisse sind geprüft und immer aktiv
+
+0.0.1: Erste Veröffentlichung.
 
 ## Voraussetzungen
 
@@ -51,9 +62,11 @@ Danach: Einstellungen → Geräte & Dienste → Integration hinzufügen → **Re
 
 1. Reolink-Einträge auswählen, die der Manager beobachten soll.
 2. Unter *Konfigurieren* die Geräte wählen (leer = alle), Erkennungsarten, Batterie-Schwellen (Standard niedrig 30 %, kritisch 15 %), Offline-Verzögerung (Standard 120 s) und ob Ereignisse gesendet werden.
-3. Für Experimentelles: *Experimentelle Funktionen anzeigen* einschalten und die gewünschten Funktionen ankreuzen.
+3. Für Experimentelles: *Experimentelle Funktionen anzeigen* einschalten und die gewünschten Funktionen ankreuzen. Danach folgt ein zweiter Schritt mit den Einstellungen für Galerie und Push.
+4. **Galerie:** Anzahl der Videos je Kamera (Standard 5). Die Karte lädt erst beim Aufklappen und nimmt die niedrige Auflösung.
+5. **Push:** Smartphones (`notify.mobile_app_…`, mehrere möglich), Erkennungsarten (Standard Person), Sperrzeit (Standard 60 s) und Dashboard-Pfad der Karte, z. B. `/lovelace/kameras`. Ein Tipp auf die Nachricht öffnet dieses Dashboard, und die Karte öffnet das Live-Bild der Kamera. Im Zahnrad gibt es eine Test-Nachricht.
 
-Die Karte wird automatisch als Lovelace-Ressource eingetragen (im YAML-Modus muss `/reolink_manager_files/reolink-manager-card.js?v=0.0.1` als Modul-Ressource von Hand ergänzt werden).
+Die Karte wird automatisch als Lovelace-Ressource eingetragen (im YAML-Modus muss `/reolink_manager_files/reolink-manager-card.js?v=0.0.2` als Modul-Ressource von Hand ergänzt werden).
 
 ## Die Karte
 
@@ -69,14 +82,15 @@ Alle Optionen lassen sich im grafischen Editor einstellen. Wichtige Schlüssel:
 | Schlüssel | Bedeutung | Standard |
 |---|---|---|
 | `show_experimental` | Experimentelle Funktionen in dieser Karte anzeigen | `false` |
-| `show_cameras`, `show_battery`, `show_detections`, `show_updates`, `show_storage`, `show_controls`, `show_hub` | Kategorie anzeigen | `true` |
+| `show_cameras`, `show_battery`, `show_detections`, `show_updates`, `show_storage`, `show_gallery`, `show_controls`, `show_hub` | Kategorie anzeigen | `true` |
+| `live_auto` | Standbild beim Öffnen des Popups sofort laden (aus = nur per Knopf, schont Akku-Kameras) | `true` |
 | `default_tab` | Starttab | `cameras` |
 | `max_rows` | Maximale Zeilen | `50` |
 | `zoom` | Skalierung in Prozent | `100` |
 | `read_only` | Alle Bedienelemente ausblenden | `false` |
 | `entry_id` | Nur bei mehreren Reolink-Manager-Einträgen | leer |
 
-Ohne eingeschaltete experimentelle Funktionen zeigt die Karte nur das Zahnrad mit Version und Hinweisen.
+Ohne eingeschaltete experimentelle Funktionen zeigt die Karte die geprüften Kategorien (Kameras, Batterie, Erkennungen, Updates, Speicher, Hub) und das Zahnrad.
 
 ## Farben
 
@@ -100,7 +114,7 @@ Im Editor unter *Farben* oder per `color_*`-Schlüssel. Leer = Theme-Standard. E
 
 ## Ereignisse
 
-Nur mit eingeschalteter Funktion `events` und Option „Ereignisse senden“. Beim Start gibt es eine Ruhephase von 60 s, damit keine Ereignisflut entsteht.
+Immer aktiv, solange die Option „Ereignisse senden“ eingeschaltet ist. Beim Start gibt es eine Ruhephase von 60 s, damit keine Ereignisflut entsteht.
 
 | Ereignis | Wann |
 |---|---|
@@ -114,7 +128,7 @@ Die Daten enthalten `entry_id`, `device_id`, `name`, `model`, `kind`, bei Batter
 
 ## Sensoren
 
-Nur mit eingeschalteter Funktion `sensors`: Geräte, Offline, Batterie niedrig, Batterie kritisch, Updates verfügbar.
+Immer aktiv: Geräte, Offline, Batterie niedrig, Batterie kritisch, Updates verfügbar.
 
 ## Versionsanzeige und Update-Hinweis
 
@@ -122,7 +136,7 @@ Die Version steht im Zahnrad der Karte (App-Version), oben im Karten-Editor und 
 
 ## Experimentelle Funktionen
 
-Alles in 0.0.1 ist ungeprüft. Es gibt einen Hauptschalter (Optionen: *Experimentelle Funktionen anzeigen*, Karte: `show_experimental`) und je Funktion einen eigenen Schalter. Solange er aus ist, zeigt die Karte nichts davon, das Backend führt keine Aktionen aus, sendet keine Ereignisse und legt keine Sensoren an. Welche Funktion was bedeutet und wie du sie prüfst, steht in [EXPERIMENTELL.md](EXPERIMENTELL.md).
+In 0.0.2 sind Live-Bild, Galerie, Push, Steuerung, PTZ und Aktualisieren/Wecken ungeprüft. Es gibt einen Hauptschalter (Optionen: *Experimentelle Funktionen anzeigen*, Karte: `show_experimental`) und je Funktion einen eigenen Schalter. Solange er aus ist, zeigt die Karte nichts davon, das Backend führt keine Aktionen aus, sendet keine Ereignisse und legt keine Sensoren an. Welche Funktion was bedeutet und wie du sie prüfst, steht in [EXPERIMENTELL.md](EXPERIMENTELL.md).
 
 ## Sicherheit
 
@@ -134,18 +148,22 @@ Alles in 0.0.1 ist ungeprüft. Es gibt einen Hauptschalter (Optionen: *Experimen
 
 ## Bekannte Einschränkungen
 
-- **Nicht an echter Hardware getestet.** Getestet wurde gegen echte Home-Assistant-Klassen mit simulierten Reolink-Entitäten und im Browser mit Testdaten.
+- **Neues nicht an echter Hardware getestet.** Übersicht, Sensoren und Ereignisse hat Thorsten mit 0.0.1 bestätigt. Alles Neue wurde nur gegen echte Home-Assistant-Klassen mit simulierten Reolink-Entitäten und im Browser mit Testdaten geprüft, Push nicht auf echten Smartphones.
+- Die Reolink-Integration liefert für Aufnahmen **keine Vorschaubilder**. Die Galerie zeigt deshalb pro Kamera das aktuelle Kamerabild (bei Akku-Kameras nur auf Knopfdruck) und eine Liste der Aufnahmen.
+- Ob eine Aufnahme im Browser abspielt, hängt vom Codec ab (H.265 geht nicht in jedem Browser). Dann hilft „In Home Assistant öffnen“.
+- Push: Ob das Bild und der Tipp auf iOS und Android gleich funktionieren, ist offen. Auf dem Smartphone muss die Companion-App Benachrichtigungen erlauben.
 - Die Zuordnung der Reolink-Entitäten (`translation_key`, Bezeichnung der Unique-ID) ist aus der Dokumentation abgeleitet. Bei Entitäten, die nicht erkannt werden, steht im Popup „nicht zugeordnet“. Bitte melde diese Fälle als Issue (ohne Zugangsdaten, IPs oder Seriennummern).
 - Die Polarität des Schlafstatus (an = schläft) ist angenommen.
 - Das Repository `meine-smarte-welt/reolink_manager` für die Versionsprüfung ist angenommen.
 - Der Manager zeigt nur, was die Reolink-Integration liefert. Fehlt dort etwas, fehlt es auch hier.
 - Übersetzungen (Deutsch, Englisch, Niederländisch) sind nicht von Muttersprachlern geprüft.
-- Keine Anbindung an das Notification Center in 0.0.1.
+- Keine Anbindung an das Notification Center.
 
 ## Fehlerbehebung
 
 - **Karte nicht gefunden:** Browser-Cache leeren (Strg+F5), prüfen, ob die Ressource `/reolink_manager_files/reolink-manager-card.js` eingetragen ist.
-- **Karte zeigt nur das Zahnrad:** `show_experimental` und die Funktion `overview` in den Optionen einschalten.
+- **Kamera-Popup zeigt kein Live-Bild:** Funktion `live` in den Optionen und `show_experimental` in der Karte einschalten.
+- **Keine Push-Nachricht:** Funktion `push`, mindestens ein Smartphone und eine Erkennungsart wählen. Im Zahnrad die Test-Nachricht senden, dann Sperrzeit prüfen.
 - **Keine Geräte:** Ist der Reolink-Eintrag geladen? Im Zahnrad steht sein Status. Dann *Geräte neu einlesen*.
 - **Diagnose:** Einstellungen → Geräte & Dienste → Reolink Manager → Diagnose herunterladen (anonymisiert).
 
@@ -153,7 +171,8 @@ Alles in 0.0.1 ist ungeprüft. Es gibt einen Hauptschalter (Optionen: *Experimen
 
 | Version | Änderung |
 |---|---|
-| **0.0.1** | Erste Veröffentlichung. Alles experimentell. |
+| **0.0.2** | Popup mit Scrollbalken, Live-Bild, Galerie, Push-Nachrichten. Übersicht, Sensoren, Ereignisse geprüft und immer aktiv. |
+| 0.0.1 | Erste Veröffentlichung. Alles experimentell. |
 
 ## Datei-Integrität
 
@@ -163,11 +182,11 @@ Python-, JavaScript- und YAML-Dateien tragen in der ersten Zeile einen SHA-256-H
 |---|---|
 | `hacs.json` | `4e05738d8be8aa023f7d922544ed51f3aefbd0bb5fe89f9b7573e637c505d5ad` |
 | `custom_components/reolink_manager/icons.json` | `b67ca9f86968bb7b07e93637b107963721a319cbc429b4c3bc4c9a9bc039f49a` |
-| `custom_components/reolink_manager/manifest.json` | `adecb6bd3db697fd4ffe862dcff9e214408747f368adaabd26793e628ab709e9` |
-| `custom_components/reolink_manager/strings.json` | `9d167cb254f8212b46400e2a57cf7404bdae23391b2031a92d6e56f7c5ea378f` |
-| `custom_components/reolink_manager/translations/de.json` | `9d167cb254f8212b46400e2a57cf7404bdae23391b2031a92d6e56f7c5ea378f` |
-| `custom_components/reolink_manager/translations/en.json` | `f8be351f6e762ca73e01c712bed1d739e32173090166db1f827d1b37b527d321` |
-| `custom_components/reolink_manager/translations/nl.json` | `cbaffb96d5f8b898ee0ed2ec0756fff0559d4a43f15242519f63e8a2b854b4fd` |
+| `custom_components/reolink_manager/manifest.json` | `50228b60a216612f0bd8cef69fa8856084cd42aa6e8a3925147efae67a109dab` |
+| `custom_components/reolink_manager/strings.json` | `2c05a417e0253758b2698470833ea0545472d5b05c08afde707993709c65ac17` |
+| `custom_components/reolink_manager/translations/de.json` | `2c05a417e0253758b2698470833ea0545472d5b05c08afde707993709c65ac17` |
+| `custom_components/reolink_manager/translations/en.json` | `54d3cf5665d03ee599607d06613d8d94610f167ba2cc23508fb852bc70da7c5b` |
+| `custom_components/reolink_manager/translations/nl.json` | `500de58bc94c634e79ee860ae55aa1d3796acf21a77f2a77d2d48f10193f25cb` |
 
 ## Lizenz
 

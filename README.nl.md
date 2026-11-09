@@ -11,28 +11,39 @@ Reolink Manager is een aanvulling voor Home Assistant. Het legt zich over de **o
 
 De manager leest alleen de apparaten, entiteiten en statussen die de Reolink-integratie al levert. Hij praat **zelf niet met de camera's**. Daardoor worden accu-camera's (bijv. Argus) niet extra gewekt.
 
-> **Belangrijk, versie 0.0.1:** Alles in deze versie is nieuw en **ongetest**. De functies zijn daarom standaard **verborgen** en moeten bewust worden ingeschakeld (zie [Experimentele functies](#experimentele-functies)). Er is niets met echte camera's getest. Details in [EXPERIMENTELL.md](EXPERIMENTELL.md) (Duits).
+> **Belangrijk, versie 0.0.2:** Thorsten heeft overzicht, sensoren en gebeurtenissen met 0.0.1 op zijn installatie bevestigd; ze zijn nu **altijd actief**. Nieuw zijn live-beeld, galerij en pushmeldingen. Net als bediening, PTZ en verversen/wekken zijn ze **ongetest** en standaard **verborgen** (zie [Experimentele functies](#experimentele-functies)). De nieuwe functies zijn nog niet met echte camera's of smartphones getest. Details in [EXPERIMENTELL.md](EXPERIMENTELL.md) (Duits).
 
 ## Functies
 
 | Categorie (tab) | Inhoud | Functie |
 |---|---|---|
-| Camera's | Status (online, offline, privémodus), slaapstatus, batterij, wifi-signaal | `overview` |
-| Batterij | Niveau, toestand, temperatuur, waarschuwingsniveaus laag en kritiek | `overview` |
-| Detecties | Beweging, persoon, voertuig, huisdier, dier, gezicht, pakket, bezoeker, babygehuil, fiets, met „laatst gewijzigd” | `overview` |
-| Updates | Firmware-updates van de apparaten met geïnstalleerde en nieuwe versie | `overview` |
-| Opslag | Gebruik van de SD-kaart of hub-opslag, voor zover de Reolink-integratie dit levert | `overview` |
+| Camera's | Status (online, offline, privémodus), slaapstatus, batterij, wifi-signaal | altijd |
+| Batterij | Niveau, toestand, temperatuur, waarschuwingsniveaus laag en kritiek | altijd |
+| Detecties | Beweging, persoon, voertuig, huisdier, dier, gezicht, pakket, bezoeker, babygehuil, fiets, met „laatst gewijzigd” | altijd |
+| Updates | Firmware-updates van de apparaten met geïnstalleerde en nieuwe versie | altijd |
+| Opslag | Gebruik van de SD-kaart of hub-opslag, voor zover de Reolink-integratie dit levert | altijd |
 | Bediening | Privémodus, opname, push, scène van de hub, sirene, licht (schrijft) | `controls` |
-| Hub | Home Hub met aantal verbonden apparaten en scène | `overview` |
+| Galerij | Opnames per camera als uitklapmenu, lage resolutie uit de mediabrowser, aantal instelbaar in de opties, afspelen in een overlay | `gallery` |
+| Hub | Home Hub met aantal verbonden apparaten en scène | altijd |
 | Tandwiel | Versie, status van de Reolink-integratie, selectie, opties, onderhoud, gebeurtenissenlogboek, experimenteel | altijd |
 
-Daarnaast (allemaal experimenteel): PTZ-bediening (`ptz`), verversen/wekken (`refresh`), overzichtssensoren (`sensors`), gebeurtenissen op de Home Assistant-bus (`events`).
+Altijd actief (bevestigd): de categorieën hierboven, overzichtssensoren (`sensors`) en gebeurtenissen op de Home Assistant-bus (`events`).
+
+Experimenteel: live-beeld in de popup (`live`), galerij (`gallery`), pushmeldingen met beeld bij detectie (`push`), PTZ-bediening (`ptz`), verversen/wekken (`refresh`) en bediening (`controls`).
+
+De camera-popup heeft nu een zichtbare schuifbalk. Met `live` toont hij bovenaan meteen een stilstaand beeld; een knop start de livestream en een klik op de PTZ-bediening schakelt automatisch naar de stream.
 
 De apparaatselectie in de opties bepaalt welke camera's, hubs en gongs helemaal verschijnen. Elke categorie heeft in de kaart een eigen schakelaar.
 
-## Nieuw in 0.0.1
+## Nieuw in 0.0.2
 
-Eerste release. Alle functies zijn nieuw en experimenteel.
+- Popup: zichtbare schuifbalk, de uitklapmenu's worden niet meer platgedrukt
+- Live-beeld in de popup (`live`): meteen een stilstaand beeld, stream via knop, een PTZ-klik schakelt naar de stream
+- Nieuwe categorie Galerij (`gallery`): uitklapmenu per camera met de nieuwste opnames (lage resolutie), aantal instelbaar in de opties
+- Pushmeldingen (`push`): bij gekozen detecties gaat een bericht met het actuele beeld naar een of meer smartphones; een tik opent het dashboard met het live-beeld
+- Overzicht, sensoren en gebeurtenissen zijn bevestigd en altijd actief
+
+0.0.1: Eerste release.
 
 ## Vereisten
 
@@ -51,9 +62,11 @@ Daarna: Instellingen → Apparaten en diensten → Integratie toevoegen → **Re
 
 1. Kies de Reolink-items die de manager moet bekijken.
 2. Kies onder *Configureren* de apparaten (leeg = alle), detectiesoorten, batterijdrempels (standaard laag 30 %, kritiek 15 %), offline-vertraging (standaard 120 s) en of gebeurtenissen worden verzonden.
-3. Voor experimentele functies: schakel *Experimentele functies tonen* in en vink de gewenste functies aan.
+3. Voor experimentele functies: schakel *Experimentele functies tonen* in en vink de gewenste functies aan. Daarna volgt een tweede stap met de instellingen voor galerij en push.
+4. **Galerij:** aantal video's per camera (standaard 5). De kaart laadt pas bij het uitklappen en gebruikt de lage resolutie.
+5. **Push:** smartphones (`notify.mobile_app_…`, meerdere mogelijk), detectiesoorten (standaard persoon), blokkeertijd (standaard 60 s) en het dashboardpad van de kaart, bijv. `/lovelace/camera`. Een tik op het bericht opent dat dashboard en de kaart opent het live-beeld van de camera. In het tandwiel staat een testbericht.
 
-De kaart wordt automatisch als Lovelace-resource geregistreerd (in YAML-modus moet `/reolink_manager_files/reolink-manager-card.js?v=0.0.1` handmatig als module-resource worden toegevoegd).
+De kaart wordt automatisch als Lovelace-resource geregistreerd (in YAML-modus moet `/reolink_manager_files/reolink-manager-card.js?v=0.0.2` handmatig als module-resource worden toegevoegd).
 
 ## De kaart
 
@@ -69,14 +82,15 @@ Alles is in te stellen in de grafische editor. Belangrijke sleutels:
 | Sleutel | Betekenis | Standaard |
 |---|---|---|
 | `show_experimental` | Experimentele functies in deze kaart tonen | `false` |
-| `show_cameras`, `show_battery`, `show_detections`, `show_updates`, `show_storage`, `show_controls`, `show_hub` | Categorie tonen | `true` |
+| `show_cameras`, `show_battery`, `show_detections`, `show_updates`, `show_storage`, `show_gallery`, `show_controls`, `show_hub` | Categorie tonen | `true` |
+| `live_auto` | Stilstaand beeld meteen laden bij openen van de popup (uit = alleen via knop, spaart accu-camera's) | `true` |
 | `default_tab` | Starttab | `cameras` |
 | `max_rows` | Maximaal aantal rijen | `50` |
 | `zoom` | Schaling in procenten | `100` |
 | `read_only` | Alle bedieningselementen verbergen | `false` |
 | `entry_id` | Alleen bij meerdere Reolink Manager-items | leeg |
 
-Zonder ingeschakelde experimentele functies toont de kaart alleen het tandwiel met versie en aanwijzingen.
+Zonder ingeschakelde experimentele functies toont de kaart de bevestigde categorieën (Camera's, Batterij, Detecties, Updates, Opslag, Hub) en het tandwiel.
 
 ## Kleuren
 
@@ -100,7 +114,7 @@ In de editor onder *Kleuren* of via `color_*`-sleutels. Leeg = themastandaard. T
 
 ## Gebeurtenissen
 
-Alleen met ingeschakelde functie `events` en optie „Gebeurtenissen verzenden”. Na de start geldt een rustfase van 60 s, zodat er geen vloed aan gebeurtenissen ontstaat.
+Altijd actief zolang de optie „Gebeurtenissen verzenden” aan staat. Na de start geldt een rustfase van 60 s, zodat er geen vloed aan gebeurtenissen ontstaat.
 
 | Gebeurtenis | Wanneer |
 |---|---|
@@ -114,7 +128,7 @@ De gegevens bevatten `entry_id`, `device_id`, `name`, `model`, `kind`, bij batte
 
 ## Sensoren
 
-Alleen met ingeschakelde functie `sensors`: Apparaten, Offline, Batterij laag, Batterij kritiek, Updates beschikbaar.
+Altijd actief: Apparaten, Offline, Batterij laag, Batterij kritiek, Updates beschikbaar.
 
 ## Versieweergave en updatemelding
 
@@ -122,7 +136,7 @@ De versie staat in het tandwiel van de kaart (App-versie), bovenin de kaartedito
 
 ## Experimentele functies
 
-Alles in 0.0.1 is ongetest. Er is een hoofdschakelaar (opties: *Experimentele functies tonen*, kaart: `show_experimental`) en per functie een eigen schakelaar. Zolang die uit staat, toont de kaart er niets van, voert de backend geen acties uit, verstuurt geen gebeurtenissen en maakt geen sensoren aan. Wat elke functie betekent en hoe je haar test, staat in [EXPERIMENTELL.md](EXPERIMENTELL.md) (Duits).
+In 0.0.2 zijn live-beeld, galerij, push, bediening, PTZ en verversen/wekken ongetest. Er is een hoofdschakelaar (opties: *Experimentele functies tonen*, kaart: `show_experimental`) en per functie een eigen schakelaar. Zolang die uit staat, toont de kaart er niets van, voert de backend geen acties uit, verstuurt geen gebeurtenissen en maakt geen sensoren aan. Wat elke functie betekent en hoe je haar test, staat in [EXPERIMENTELL.md](EXPERIMENTELL.md) (Duits).
 
 ## Veiligheid
 
@@ -134,18 +148,22 @@ Alles in 0.0.1 is ongetest. Er is een hoofdschakelaar (opties: *Experimentele fu
 
 ## Bekende beperkingen
 
-- **Niet op echte hardware getest.** Getest tegen echte Home Assistant-klassen met gesimuleerde Reolink-entiteiten en in de browser met testgegevens.
+- **Nieuwe functies niet op echte hardware getest.** Overzicht, sensoren en gebeurtenissen heeft Thorsten met 0.0.1 bevestigd. Alles nieuws is alleen getest tegen echte Home Assistant-klassen met gesimuleerde Reolink-entiteiten en in de browser met testgegevens; push niet op echte smartphones.
+- De Reolink-integratie levert **geen voorbeeldbeelden** voor opnames. De galerij toont daarom per camera het actuele camerabeeld (bij accu-camera's alleen op knopdruk) en een lijst met opnames.
+- Of een opname in de browser afspeelt, hangt af van de codec (H.265 werkt niet in elke browser). Gebruik dan „Openen in Home Assistant”.
+- Push: of beeld en tik op iOS en Android hetzelfde werken, is nog open. De companion-app moet meldingen mogen tonen.
 - De toewijzing van Reolink-entiteiten (`translation_key`, einde van de unieke ID) is afgeleid uit de documentatie. Entiteiten die niet worden herkend, tonen „niet toegewezen” in de popup. Meld dit graag als issue (zonder inloggegevens, IP's of serienummers).
 - De polariteit van de slaapstatus (aan = slaapt) is aangenomen.
 - De repository `meine-smarte-welt/reolink_manager` voor de versiecontrole is aangenomen.
 - De manager toont alleen wat de Reolink-integratie levert. Ontbreekt daar iets, dan ontbreekt het ook hier.
 - Vertalingen (Duits, Engels, Nederlands) zijn niet door moedertaalsprekers gecontroleerd.
-- Geen koppeling met het Notification Center in 0.0.1.
+- Geen koppeling met het Notification Center.
 
 ## Problemen oplossen
 
 - **Kaart niet gevonden:** Wis de browsercache (Ctrl+F5) en controleer of de resource `/reolink_manager_files/reolink-manager-card.js` is geregistreerd.
-- **Kaart toont alleen het tandwiel:** Schakel `show_experimental` en de functie `overview` in de opties in.
+- **Camera-popup toont geen live-beeld:** schakel de functie `live` in de opties en `show_experimental` in de kaart in.
+- **Geen pushbericht:** kies de functie `push`, minstens één smartphone en één detectiesoort. Stuur het testbericht in het tandwiel en controleer daarna de blokkeertijd.
 - **Geen apparaten:** Is het Reolink-item geladen? De status staat in het tandwiel. Kies dan *Apparaten opnieuw inlezen*.
 - **Diagnose:** Instellingen → Apparaten en diensten → Reolink Manager → Diagnose downloaden (geanonimiseerd).
 
@@ -153,7 +171,8 @@ Alles in 0.0.1 is ongetest. Er is een hoofdschakelaar (opties: *Experimentele fu
 
 | Versie | Wijziging |
 |---|---|
-| **0.0.1** | Eerste release. Alles experimenteel. |
+| **0.0.2** | Popup met schuifbalk, live-beeld, galerij, pushmeldingen. Overzicht, sensoren, gebeurtenissen bevestigd en altijd actief. |
+| 0.0.1 | Eerste release. Alles experimenteel. |
 
 ## Bestandsintegriteit
 
@@ -163,11 +182,11 @@ Python-, JavaScript- en YAML-bestanden hebben op de eerste regel een SHA-256-has
 |---|---|
 | `hacs.json` | `4e05738d8be8aa023f7d922544ed51f3aefbd0bb5fe89f9b7573e637c505d5ad` |
 | `custom_components/reolink_manager/icons.json` | `b67ca9f86968bb7b07e93637b107963721a319cbc429b4c3bc4c9a9bc039f49a` |
-| `custom_components/reolink_manager/manifest.json` | `adecb6bd3db697fd4ffe862dcff9e214408747f368adaabd26793e628ab709e9` |
-| `custom_components/reolink_manager/strings.json` | `9d167cb254f8212b46400e2a57cf7404bdae23391b2031a92d6e56f7c5ea378f` |
-| `custom_components/reolink_manager/translations/de.json` | `9d167cb254f8212b46400e2a57cf7404bdae23391b2031a92d6e56f7c5ea378f` |
-| `custom_components/reolink_manager/translations/en.json` | `f8be351f6e762ca73e01c712bed1d739e32173090166db1f827d1b37b527d321` |
-| `custom_components/reolink_manager/translations/nl.json` | `cbaffb96d5f8b898ee0ed2ec0756fff0559d4a43f15242519f63e8a2b854b4fd` |
+| `custom_components/reolink_manager/manifest.json` | `50228b60a216612f0bd8cef69fa8856084cd42aa6e8a3925147efae67a109dab` |
+| `custom_components/reolink_manager/strings.json` | `2c05a417e0253758b2698470833ea0545472d5b05c08afde707993709c65ac17` |
+| `custom_components/reolink_manager/translations/de.json` | `2c05a417e0253758b2698470833ea0545472d5b05c08afde707993709c65ac17` |
+| `custom_components/reolink_manager/translations/en.json` | `54d3cf5665d03ee599607d06613d8d94610f167ba2cc23508fb852bc70da7c5b` |
+| `custom_components/reolink_manager/translations/nl.json` | `500de58bc94c634e79ee860ae55aa1d3796acf21a77f2a77d2d48f10193f25cb` |
 
 ## Licentie
 

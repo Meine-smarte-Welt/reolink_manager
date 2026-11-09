@@ -43,8 +43,7 @@
           "battery_critical": "Battery critical from (%)",
           "offline_delay": "Offline notice after (seconds)",
           "events_enabled": "Send events",
-          "experimental_enabled": "Show experimental features",
-          "experimental_features": "Experimental features"
+          "experimental_enabled": "Show experimental features"
         },
         "data_description": {
           "devices": "Leave empty to manage all devices of the selected Reolink entries.",
@@ -52,9 +51,28 @@
           "battery_low": "From this level the battery counts as low.",
           "battery_critical": "From this level the battery counts as critical (at most as high as \"low\").",
           "offline_delay": "Battery cameras sometimes drop out briefly. The \"offline\" event only fires after this time. 0 = immediately.",
-          "events_enabled": "Sends Home Assistant events such as reolink_manager_device_offline (only with the experimental feature \"Events\").",
-          "experimental_enabled": "Master switch. Experimental features are untested and completely hidden without it.",
-          "experimental_features": "Only effective when the master switch is on. Pick exactly what you want to test."
+          "events_enabled": "Sends Home Assistant events such as reolink_manager_device_offline.",
+          "experimental_enabled": "Master switch. Experimental features are untested. When on, a second step follows where you pick single features."
+        }
+      },
+      "experimental": {
+        "title": "Experimental features",
+        "description": "These features are untested. Pick what you want to test. Live view and gallery can wake battery cameras.",
+        "data": {
+          "experimental_features": "Experimental features",
+          "gallery_count": "Number of gallery videos per camera",
+          "push_targets": "Smartphones for push notifications",
+          "push_detections": "Detections that trigger a push notification",
+          "push_cooldown": "Lock time per camera and detection (seconds)",
+          "push_path": "Dashboard path for tapping the notification"
+        },
+        "data_description": {
+          "experimental_features": "Only effective when the master switch is on.",
+          "gallery_count": "The newest recordings in low resolution are loaded (1 to 20).",
+          "push_targets": "Mobile app services (notify.mobile_app_…). Several possible. Empty = no push notifications. Effective with the \"Push\" feature.",
+          "push_detections": "Only these detection types send a message.",
+          "push_cooldown": "Within this time the same camera sends no second message for the same detection. 0 = no lock.",
+          "push_path": "Dashboard containing the card, e.g. /lovelace/cameras. Tapping the notification opens the camera's live view there."
         }
       }
     },
@@ -79,22 +97,32 @@
     },
     "experimental_features": {
       "options": {
-        "overview": "Overview: cameras, battery, detections, updates, storage, hub (read only)",
-        "sensors": "Overview sensors",
-        "events": "Home Assistant events",
         "controls": "Controls: switches and selects (writes)",
         "ptz": "PTZ control (writes)",
-        "refresh": "Refresh and wake camera (writes)"
+        "refresh": "Refresh and wake camera (writes)",
+        "live": "Live view in the camera popup (can wake battery cameras)",
+        "gallery": "Gallery: newest recordings per camera",
+        "push": "Push notification with image on detection"
       }
     }
   },
   "entity": {
     "sensor": {
-      "devices": {"name": "Devices"},
-      "offline": {"name": "Offline"},
-      "battery_low": {"name": "Battery low"},
-      "battery_critical": {"name": "Battery critical"},
-      "updates": {"name": "Updates available"}
+      "devices": {
+        "name": "Devices"
+      },
+      "offline": {
+        "name": "Offline"
+      },
+      "battery_low": {
+        "name": "Battery low"
+      },
+      "battery_critical": {
+        "name": "Battery critical"
+      },
+      "updates": {
+        "name": "Updates available"
+      }
     }
   },
   "services": {
@@ -102,28 +130,46 @@
       "name": "Rescan devices",
       "description": "Reads the devices and entities of the Reolink integration again.",
       "fields": {
-        "entry_id": {"name": "Entry", "description": "Entry ID of Reolink Manager (optional)."}
+        "entry_id": {
+          "name": "Entry",
+          "description": "Entry ID of Reolink Manager (optional)."
+        }
       }
     },
     "check_update": {
       "name": "Check for new version",
       "description": "Asks GitHub for a newer version of Reolink Manager.",
       "fields": {
-        "entry_id": {"name": "Entry", "description": "Entry ID of Reolink Manager (optional)."}
+        "entry_id": {
+          "name": "Entry",
+          "description": "Entry ID of Reolink Manager (optional)."
+        }
       }
     },
     "refresh_device": {
       "name": "Refresh camera",
       "description": "Triggers a full update of the Reolink entities. This wakes battery cameras and uses battery. Experimental.",
       "fields": {
-        "device_id": {"name": "Device", "description": "Reolink device to refresh."},
-        "entry_id": {"name": "Entry", "description": "Entry ID of Reolink Manager (optional)."}
+        "device_id": {
+          "name": "Device",
+          "description": "Reolink device to refresh."
+        },
+        "entry_id": {
+          "name": "Entry",
+          "description": "Entry ID of Reolink Manager (optional)."
+        }
       }
     }
   },
   "exceptions": {
-    "no_entry": {"message": "Reolink Manager is not loaded."},
-    "experimental_disabled": {"message": "This feature is experimental and not enabled."},
-    "unknown_device": {"message": "The device is not managed by Reolink Manager."}
+    "no_entry": {
+      "message": "Reolink Manager is not loaded."
+    },
+    "experimental_disabled": {
+      "message": "This feature is experimental and not enabled."
+    },
+    "unknown_device": {
+      "message": "The device is not managed by Reolink Manager."
+    }
   }
 }

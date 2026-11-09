@@ -1,4 +1,4 @@
-# SHA256 (Inhalt ab Zeile 2, d.h. dieser Datei ohne diese erste Zeile): 6f97a6032757962a700d803e45c816542ea0d501dd42c70bb5f599210f2ba2ad
+# SHA256 (Inhalt ab Zeile 2, d.h. dieser Datei ohne diese erste Zeile): eb4ab0a7f4bcf2a2c6e61957e5dee0d71e57e531daf764cb0c76af24b8063496
 """Datenmodell, Zwischenspeicher, Aktionen und Ereignisse des Reolink Managers.
 
 Der Manager spricht nie selbst mit den Kameras. Er liest nur Geräte-, Entitäts-
@@ -7,6 +7,7 @@ befüllt. Dadurch weckt das Lesen keine Akku-Kameras.
 """
 from __future__ import annotations
 
+import asyncio
 import logging
 import time
 from collections import deque
@@ -16,7 +17,7 @@ from functools import partial
 from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import STATE_ON, STATE_UNAVAILABLE, STATE_UNKNOWN
+from homeassistant.const import STATE_OFF, STATE_ON, STATE_UNAVAILABLE, STATE_UNKNOWN
 from homeassistant.core import CALLBACK_TYPE, Context, Event, HomeAssistant, callback
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import device_registry as dr
@@ -36,17 +37,30 @@ from .const import (
     CONF_EVENTS_ENABLED,
     CONF_EXPERIMENTAL_ENABLED,
     CONF_EXPERIMENTAL_FEATURES,
+    CONF_GALLERY_COUNT,
     CONF_OFFLINE_DELAY,
+    CONF_PUSH_COOLDOWN,
+    CONF_PUSH_DETECTIONS,
+    CONF_PUSH_PATH,
+    CONF_PUSH_TARGETS,
     CONF_REOLINK_ENTRIES,
+    CHECKED_FEATURES,
     DEFAULT_BATTERY_CRITICAL,
     DEFAULT_BATTERY_LOW,
+    DEFAULT_GALLERY_COUNT,
     DEFAULT_OFFLINE_DELAY,
+    DEFAULT_PUSH_COOLDOWN,
+    DEFAULT_PUSH_DETECTIONS,
     DETECTION_KINDS,
     DOMAIN,
     EVENT_LOG_SIZE,
     EVENT_NAMES,
     EXPERIMENTAL_FEATURES,
     FLUSH_DELAY,
+    GALLERY_CACHE_SECONDS,
+    GALLERY_MAX_COUNT,
+    GALLERY_MAX_DAYS,
+    GALLERY_TIMEOUT,
     QUIET_SECONDS,
     REOLINK_DOMAIN,
     RESCAN_DELAY,
@@ -56,6 +70,18 @@ from .const import (
 from .update_check import async_fetch_latest
 
 _LOGGER = logging.getLogger(__name__)
+
+_PUSH_TEXTS = {
+    "de": ("erkannt", {"motion": "Bewegung", "person": "Person", "vehicle": "Fahrzeug", "pet": "Haustier",
+                       "animal": "Tier", "face": "Gesicht", "package": "Paket", "visitor": "Besucher",
+                       "baby_cry": "Babyschreien", "bicycle": "Fahrrad"}, "Test-Nachricht von Reolink Manager"),
+    "en": ("detected", {"motion": "Motion", "person": "Person", "vehicle": "Vehicle", "pet": "Pet",
+                        "animal": "Animal", "face": "Face", "package": "Package", "visitor": "Visitor",
+                        "baby_cry": "Baby crying", "bicycle": "Bicycle"}, "Test message from Reolink Manager"),
+    "nl": ("gedetecteerd", {"motion": "Beweging", "person": "Persoon", "vehicle": "Voertuig", "pet": "Huisdier",
+                            "animal": "Dier", "face": "Gezicht", "package": "Pakket", "visitor": "Bezoeker",
+                            "baby_cry": "Babygehuil", "bicycle": "Fiets"}, "Testbericht van Reolink Manager"),
+}
 
 PTZ_ACTIONS = ("stop", "left", "right", "up", "down", "zoom_in", "zoom_out")
 
@@ -197,6 +223,8 @@ class ReolinkManager:
         self._log: deque[dict[str, str]] = deque(maxlen=EVENT_LOG_SIZE)
         self._quiet_until = time.monotonic() + QUIET_SECONDS
         self._stopped = False
+        self._gallery_cache: dict[str, tuple[float, dict[str, Any]]] = {}
+        self._push_last: dict[tuple[str, str], float] = {}
         self.app: dict[str, Any] = {
             "version": VERSION,
             "latest_version": None,
@@ -232,8 +260,32 @@ class ReolinkManager:
     def detection_types(self) -> list[str]:
         return list(self.entry.options.get(CONF_DETECTION_TYPES, DETECTION_KINDS))
 
+    @property
+    def gallery_count(self) -> int:
+        value = int(self.entry.options.get(CONF_GALLERY_COUNT, DEFAULT_GALLERY_COUNT))
+        return max(1, min(GALLERY_MAX_COUNT, value))
+
+    @property
+    def push_targets(self) -> list[str]:
+        return [t for t in self.entry.options.get(CONF_PUSH_TARGETS, []) if isinstance(t, str)]
+
+    @property
+    def push_detections(self) -> list[str]:
+        return list(self.entry.options.get(CONF_PUSH_DETECTIONS, DEFAULT_PUSH_DETECTIONS))
+
+    @property
+    def push_cooldown(self) -> int:
+        return max(0, int(self.entry.options.get(CONF_PUSH_COOLDOWN, DEFAULT_PUSH_COOLDOWN)))
+
+    @property
+    def push_path(self) -> str:
+        path = str(self.entry.options.get(CONF_PUSH_PATH, "") or "").strip()
+        return path if path.startswith("/") else f"/{path}" if path else "/"
+
     def feature_enabled(self, key: str) -> bool:
-        """Experimentelle Funktion nur bei Hauptschalter UND Einzelschalter."""
+        """Geprüfte Funktionen sind immer aktiv, experimentelle nur mit Hauptschalter UND Einzelschalter."""
+        if key in CHECKED_FEATURES:
+            return True
         if key not in EXPERIMENTAL_FEATURES:
             return False
         if not self.entry.options.get(CONF_EXPERIMENTAL_ENABLED, False):
@@ -326,8 +378,92 @@ class ReolinkManager:
         self._notify("snapshot", self.data)
 
     @callback
-    def _handle_state(self, _event: Event) -> None:
+    def _handle_state(self, event: Event) -> None:
+        self._maybe_push(event)
         self._schedule_flush()
+
+    @callback
+    def _maybe_push(self, event: Event) -> None:
+        """Push-Nachricht bei einer neuen Erkennung (nur Wechsel aus → an)."""
+        if not self.feature_enabled("push") or not self.push_targets:
+            return
+        info = self._entities.get(event.data.get("entity_id", ""))
+        new, old = event.data.get("new_state"), event.data.get("old_state")
+        if info is None or not info["role"].startswith("detect:") or new is None or old is None:
+            return
+        if new.state != STATE_ON or old.state != STATE_OFF:
+            return
+        kind = info["role"].split(":", 1)[1]
+        if kind not in self.push_detections or kind not in self.detection_types:
+            return
+        now = time.monotonic()
+        if now < self._quiet_until:
+            return
+        key = (info["device"], kind)
+        if now - self._push_last.get(key, -1e9) < self.push_cooldown:
+            return
+        self._push_last[key] = now
+        self.entry.async_create_background_task(
+            self.hass, self._async_push(info["device"], kind), "reolink_manager_push"
+        )
+
+    def _push_lang(self) -> tuple[str, dict[str, str], str]:
+        lang = (self.hass.config.language or "en").split("-")[0]
+        return _PUSH_TEXTS.get(lang, _PUSH_TEXTS["en"])
+
+    def _camera_entity(self, device_id: str) -> str | None:
+        """Bevorzugt die flüssige (Sub-)Kamera, dann Haupt, sonst irgendeine vorhandene."""
+        info = self._devices.get(device_id)
+        if info is None:
+            return None
+        cams = [
+            e for e in info["entities"]
+            if e["domain"] == "camera" and self.hass.states.get(e["entity_id"]) is not None
+        ]
+        for wanted in ("sub", "main"):
+            for ent in cams:
+                if ent["key"] == wanted:
+                    return ent["entity_id"]
+        return cams[0]["entity_id"] if cams else None
+
+    async def _async_push(self, device_id: str, kind: str | None, test: bool = False) -> int:
+        """Nachricht mit aktuellem Bild an die gewählten Smartphones senden."""
+        info = self._devices.get(device_id)
+        if info is None:
+            return 0
+        detected, kinds, test_text = self._push_lang()
+        camera = self._camera_entity(device_id)
+        url = f"{self.push_path}{'&' if '?' in self.push_path else '?'}reolink_live={device_id}"
+        payload: dict[str, Any] = {
+            "image": f"/api/camera_proxy/{camera}" if camera else None,
+            "clickAction": url,
+            "url": url,
+            "tag": f"reolink_manager_{device_id}",
+            "group": "reolink_manager",
+            "push": {"category": "camera"},
+        }
+        if camera:
+            payload["entity_id"] = camera
+            payload["attachment"] = {"url": f"/api/camera_proxy/{camera}", "content-type": "jpeg"}
+        payload = {k: v for k, v in payload.items() if v is not None}
+        message = test_text if test else f"{kinds.get(kind or '', kind)} {detected}"
+        sent = 0
+        available = self.hass.services.async_services().get("notify", {})
+        for target in self.push_targets:
+            if target not in available:
+                _LOGGER.debug("Push-Ziel nicht vorhanden, übersprungen")
+                continue
+            try:
+                await self.hass.services.async_call(
+                    "notify",
+                    target,
+                    {"title": info["name"], "message": message, "data": payload},
+                    blocking=True,
+                )
+                sent += 1
+            except HomeAssistantError:
+                _LOGGER.warning("Push-Nachricht konnte nicht gesendet werden")
+        return sent
 
     @callback
     def _handle_registry(self, event: Event) -> None:
@@ -588,6 +724,15 @@ class ReolinkManager:
                 }
         if self.feature_enabled("refresh"):
             view["refreshable"] = self._refresh_entity(info) is not None
+        if info["kind"] == "camera" and (
+            self.feature_enabled("live") or self.feature_enabled("gallery")
+        ):
+            camera = self._camera_entity(info["id"])
+            if camera is not None:
+                if self.feature_enabled("live"):
+                    view["live"] = {"entity": camera}
+                if self.feature_enabled("gallery"):
+                    view["gallery"] = {"entity": camera}
         return view
 
     @staticmethod
@@ -643,6 +788,7 @@ class ReolinkManager:
                 "enabled": enabled,
                 "features": [k for k in EXPERIMENTAL_FEATURES if self.feature_enabled(k)],
                 "available": [{"key": k, "icon": v["icon"]} for k, v in EXPERIMENTAL_FEATURES.items()],
+                "checked": list(CHECKED_FEATURES),
             },
             "options": {
                 "battery_low": self.battery_low,
@@ -651,6 +797,11 @@ class ReolinkManager:
                 "events_enabled": bool(self.entry.options.get(CONF_EVENTS_ENABLED, True)),
                 "detection_types": self.detection_types,
                 "devices_selected": len(self.entry.options.get(CONF_DEVICES) or []),
+                "gallery_count": self.gallery_count,
+                "push_targets": len(self.push_targets),
+                "push_detections": self.push_detections,
+                "push_cooldown": self.push_cooldown,
+                "push_path": self.push_path,
             },
             "reolink": self._reolink_status(),
             "stats": stats,
@@ -791,6 +942,8 @@ class ReolinkManager:
                 self.async_rescan()
             elif action == "check_update":
                 await self.async_check_update()
+            elif action == "test_push":
+                await self._async_test_push(msg.get("device"))
             else:
                 raise ActionError("not_allowed")
         except FeatureDisabled as err:
@@ -802,6 +955,86 @@ class ReolinkManager:
             self.respond(action, "error", "call_failed")
         else:
             self.respond(action, "ok")
+
+    async def _async_test_push(self, device_id: str | None) -> None:
+        self._require_feature("push")
+        if not self.push_targets:
+            raise ActionError("no_push_target")
+        if device_id is None:
+            device_id = next(
+                (i["id"] for i in self._devices.values() if i["kind"] == "camera"), None
+            )
+        if device_id is None or device_id not in self._devices:
+            raise ActionError("unknown_device")
+        if await self._async_push(device_id, None, test=True) == 0:
+            raise ActionError("call_failed")
+
+    async def async_gallery(self, device_id: str) -> dict[str, Any]:
+        """Neueste Aufnahmen (niedrige Auflösung) aus der Medienquelle der Reolink-Integration."""
+        self._require_feature("gallery")
+        info = self._devices.get(device_id)
+        if info is None or info["kind"] != "camera":
+            raise ActionError("unknown_device")
+        count = self.gallery_count
+        cached = self._gallery_cache.get(device_id)
+        if cached and time.monotonic() - cached[0] < GALLERY_CACHE_SECONDS and cached[1]["count"] == count:
+            return cached[1]
+        cams = {e["entity_id"] for e in info["entities"] if e["domain"] == "camera"}
+        try:
+            async with asyncio.timeout(GALLERY_TIMEOUT):
+                result = await self._async_collect_gallery(cams, count)
+        except ActionError:
+            raise
+        except (TimeoutError, HomeAssistantError, ValueError, KeyError, AttributeError):
+            _LOGGER.debug("Galerie konnte nicht geladen werden", exc_info=True)
+            raise ActionError("gallery_failed") from None
+        result["device"] = device_id
+        self._gallery_cache[device_id] = (time.monotonic(), result)
+        return result
+
+    async def _async_collect_gallery(self, cams: set[str], count: int) -> dict[str, Any]:
+        from homeassistant.components import media_source  # noqa: PLC0415 - nur bei Bedarf
+
+        root = await media_source.async_browse_media(self.hass, f"media-source://{REOLINK_DOMAIN}")
+        cam_node = None
+        for child in root.children or []:
+            thumb = (child.thumbnail or "").split("?")[0]
+            if thumb.rsplit("/", 1)[-1] in cams and (child.identifier or "").startswith("CAM|"):
+                cam_node = child
+                break
+        if cam_node is None:
+            raise ActionError("gallery_unavailable")
+        _, entry_id, channel = cam_node.identifier.split("|", 2)
+        days_node = await media_source.async_browse_media(
+            self.hass, f"media-source://{REOLINK_DOMAIN}/RES|{entry_id}|{channel}|sub"
+        )
+
+        def day_key(node: Any) -> tuple[int, ...]:
+            parts = (node.identifier or "").split("|")[4:7]
+            return tuple(int(p) for p in parts if p.isdigit())
+
+        days = sorted(
+            (c for c in days_node.children or [] if c.can_expand and (c.identifier or "").startswith("DAY|")),
+            key=day_key,
+            reverse=True,
+        )
+        items: list[dict[str, Any]] = []
+        for day in days[:GALLERY_MAX_DAYS]:
+            node = await media_source.async_browse_media(self.hass, day.media_content_id)
+            files = sorted((c for c in node.children or [] if c.can_play), key=lambda c: c.title, reverse=True)
+            y, m, d = (day_key(day) + (0, 0, 0))[:3]
+            for file in files:
+                items.append(
+                    {
+                        "id": file.media_content_id,
+                        "title": file.title,
+                        "day": f"{y:04d}-{m:02d}-{d:02d}",
+                        "thumbnail": file.thumbnail,
+                    }
+                )
+                if len(items) >= count:
+                    return {"count": count, "items": items}
+        return {"count": count, "items": items}
 
     async def async_refresh_device(self, device_id: str, context: Context | None = None) -> None:
         """Für den Service refresh_device."""
@@ -882,6 +1115,10 @@ class ReolinkManager:
                 "events_enabled": bool(self.entry.options.get(CONF_EVENTS_ENABLED, True)),
                 "experimental_enabled": bool(self.entry.options.get(CONF_EXPERIMENTAL_ENABLED, False)),
                 "experimental_features": list(self.entry.options.get(CONF_EXPERIMENTAL_FEATURES, [])),
+                "gallery_count": self.gallery_count,
+                "push_targets": len(self.push_targets),
+                "push_detections": self.push_detections,
+                "push_cooldown": self.push_cooldown,
                 "detection_types": self.detection_types,
                 "devices_selected": len(self.entry.options.get(CONF_DEVICES) or []),
                 "reolink_entries": len(self.selected_reolink_entries),

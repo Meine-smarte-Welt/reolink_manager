@@ -43,8 +43,7 @@
           "battery_critical": "Batterie kritisch ab (%)",
           "offline_delay": "Offline-Meldung nach (Sekunden)",
           "events_enabled": "Ereignisse senden",
-          "experimental_enabled": "Experimentelle Funktionen anzeigen",
-          "experimental_features": "Experimentelle Funktionen"
+          "experimental_enabled": "Experimentelle Funktionen anzeigen"
         },
         "data_description": {
           "devices": "Leer lassen, um alle Geräte der gewählten Reolink-Einträge zu verwalten.",
@@ -52,9 +51,28 @@
           "battery_low": "Ab diesem Stand gilt die Batterie als niedrig.",
           "battery_critical": "Ab diesem Stand gilt die Batterie als kritisch (höchstens so hoch wie „niedrig“).",
           "offline_delay": "Akku-Kameras melden sich manchmal kurz ab. Das Ereignis „offline“ kommt erst nach dieser Zeit. 0 = sofort.",
-          "events_enabled": "Sendet Home-Assistant-Ereignisse wie reolink_manager_device_offline (nur mit der experimentellen Funktion „Ereignisse“).",
-          "experimental_enabled": "Hauptschalter. Experimentelle Funktionen sind ungeprüft und ohne ihn komplett ausgeblendet.",
-          "experimental_features": "Nur wirksam, wenn der Hauptschalter an ist. Wähle gezielt, was du testen willst."
+          "events_enabled": "Sendet Home-Assistant-Ereignisse wie reolink_manager_device_offline.",
+          "experimental_enabled": "Hauptschalter. Experimentelle Funktionen sind ungeprüft. Bei „An“ folgt ein zweiter Schritt, in dem du einzelne Funktionen wählst."
+        }
+      },
+      "experimental": {
+        "title": "Experimentelle Funktionen",
+        "description": "Diese Funktionen sind ungeprüft. Wähle gezielt, was du testen willst. Live-Bild und Galerie können Akku-Kameras wecken.",
+        "data": {
+          "experimental_features": "Experimentelle Funktionen",
+          "gallery_count": "Anzahl Galerie-Videos pro Kamera",
+          "push_targets": "Smartphones für Push-Nachrichten",
+          "push_detections": "Erkennungen, die eine Push-Nachricht auslösen",
+          "push_cooldown": "Sperrzeit pro Kamera und Erkennung (Sekunden)",
+          "push_path": "Dashboard-Pfad für den Tipp auf die Nachricht"
+        },
+        "data_description": {
+          "experimental_features": "Nur wirksam, wenn der Hauptschalter an ist.",
+          "gallery_count": "Es werden die neuesten Aufnahmen in niedriger Auflösung geladen (1 bis 20).",
+          "push_targets": "Mobile-App-Dienste (notify.mobile_app_…). Mehrere möglich. Leer = keine Push-Nachrichten. Wirksam mit der Funktion „Push“.",
+          "push_detections": "Nur diese Erkennungsarten senden eine Nachricht.",
+          "push_cooldown": "Innerhalb dieser Zeit sendet dieselbe Kamera für dieselbe Erkennung keine zweite Nachricht. 0 = keine Sperre.",
+          "push_path": "Dashboard mit der Karte, z. B. /lovelace/kameras. Der Tipp auf die Nachricht öffnet dort das Live-Bild der Kamera."
         }
       }
     },
@@ -79,22 +97,32 @@
     },
     "experimental_features": {
       "options": {
-        "overview": "Übersicht: Kameras, Batterie, Erkennungen, Updates, Speicher, Hub (nur Lesen)",
-        "sensors": "Übersichts-Sensoren",
-        "events": "Home-Assistant-Ereignisse",
         "controls": "Steuerung: Schalter und Auswahlfelder (schreibt)",
         "ptz": "PTZ-Steuerung (schreibt)",
-        "refresh": "Kamera aktualisieren und wecken (schreibt)"
+        "refresh": "Kamera aktualisieren und wecken (schreibt)",
+        "live": "Live-Bild im Kamera-Popup (kann Akku-Kameras wecken)",
+        "gallery": "Galerie: neueste Aufnahmen je Kamera",
+        "push": "Push-Nachricht mit Bild bei Erkennung"
       }
     }
   },
   "entity": {
     "sensor": {
-      "devices": {"name": "Geräte"},
-      "offline": {"name": "Offline"},
-      "battery_low": {"name": "Batterie niedrig"},
-      "battery_critical": {"name": "Batterie kritisch"},
-      "updates": {"name": "Updates verfügbar"}
+      "devices": {
+        "name": "Geräte"
+      },
+      "offline": {
+        "name": "Offline"
+      },
+      "battery_low": {
+        "name": "Batterie niedrig"
+      },
+      "battery_critical": {
+        "name": "Batterie kritisch"
+      },
+      "updates": {
+        "name": "Updates verfügbar"
+      }
     }
   },
   "services": {
@@ -102,28 +130,46 @@
       "name": "Geräte neu einlesen",
       "description": "Liest Geräte und Entitäten der Reolink-Integration neu ein.",
       "fields": {
-        "entry_id": {"name": "Eintrag", "description": "Eintrags-ID des Reolink Managers (optional)."}
+        "entry_id": {
+          "name": "Eintrag",
+          "description": "Eintrags-ID des Reolink Managers (optional)."
+        }
       }
     },
     "check_update": {
       "name": "Auf neue Version prüfen",
       "description": "Fragt GitHub nach einer neueren Version des Reolink Managers.",
       "fields": {
-        "entry_id": {"name": "Eintrag", "description": "Eintrags-ID des Reolink Managers (optional)."}
+        "entry_id": {
+          "name": "Eintrag",
+          "description": "Eintrags-ID des Reolink Managers (optional)."
+        }
       }
     },
     "refresh_device": {
       "name": "Kamera aktualisieren",
       "description": "Löst ein vollständiges Update der Reolink-Entitäten aus. Das weckt Akku-Kameras und verbraucht Batterie. Experimentell.",
       "fields": {
-        "device_id": {"name": "Gerät", "description": "Reolink-Gerät, das aktualisiert werden soll."},
-        "entry_id": {"name": "Eintrag", "description": "Eintrags-ID des Reolink Managers (optional)."}
+        "device_id": {
+          "name": "Gerät",
+          "description": "Reolink-Gerät, das aktualisiert werden soll."
+        },
+        "entry_id": {
+          "name": "Eintrag",
+          "description": "Eintrags-ID des Reolink Managers (optional)."
+        }
       }
     }
   },
   "exceptions": {
-    "no_entry": {"message": "Der Reolink Manager ist nicht geladen."},
-    "experimental_disabled": {"message": "Diese Funktion ist experimentell und nicht aktiviert."},
-    "unknown_device": {"message": "Das Gerät wird vom Reolink Manager nicht verwaltet."}
+    "no_entry": {
+      "message": "Der Reolink Manager ist nicht geladen."
+    },
+    "experimental_disabled": {
+      "message": "Diese Funktion ist experimentell und nicht aktiviert."
+    },
+    "unknown_device": {
+      "message": "Das Gerät wird vom Reolink Manager nicht verwaltet."
+    }
   }
 }

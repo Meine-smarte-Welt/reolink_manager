@@ -1,4 +1,4 @@
-# SHA256 (Inhalt ab Zeile 2, d.h. dieser Datei ohne diese erste Zeile): 587a6a3d76959c9ee559e89a722a4969fb291634f35fc4f4990ce1476f068ece
+# SHA256 (Inhalt ab Zeile 2, d.h. dieser Datei ohne diese erste Zeile): 2e345d8043e934bf75391e4c5b26600b23171469b36208895deeb6228de91970
 """Einrichtung, Neu-Konfigurieren und Optionen des Reolink Managers."""
 from __future__ import annotations
 
@@ -18,6 +18,7 @@ from homeassistant.helpers.selector import (
     SelectSelector,
     SelectSelectorConfig,
     SelectSelectorMode,
+    TextSelector,
 )
 
 from .const import (
@@ -28,14 +29,23 @@ from .const import (
     CONF_EVENTS_ENABLED,
     CONF_EXPERIMENTAL_ENABLED,
     CONF_EXPERIMENTAL_FEATURES,
+    CONF_GALLERY_COUNT,
     CONF_OFFLINE_DELAY,
+    CONF_PUSH_COOLDOWN,
+    CONF_PUSH_DETECTIONS,
+    CONF_PUSH_PATH,
+    CONF_PUSH_TARGETS,
     CONF_REOLINK_ENTRIES,
     DEFAULT_BATTERY_CRITICAL,
     DEFAULT_BATTERY_LOW,
+    DEFAULT_GALLERY_COUNT,
     DEFAULT_OFFLINE_DELAY,
+    DEFAULT_PUSH_COOLDOWN,
+    DEFAULT_PUSH_DETECTIONS,
     DETECTION_KINDS,
     DOMAIN,
     EXPERIMENTAL_FEATURES,
+    GALLERY_MAX_COUNT,
     REOLINK_DOMAIN,
     VERSION,
 )
@@ -161,6 +171,9 @@ class ReolinkManagerConfigFlow(ConfigFlow, domain=DOMAIN):
 class ReolinkManagerOptionsFlow(OptionsFlow):
     """Optionen: Kameras, Erkennungsarten, Schwellen, Ereignisse, Experimentelles."""
 
+    def __init__(self) -> None:
+        self._base: dict[str, Any] = {}
+
     async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         entry = self.config_entry
         opts = entry.options
@@ -171,21 +184,18 @@ class ReolinkManagerOptionsFlow(OptionsFlow):
             if critical > low:
                 errors["base"] = "critical_above_low"
             else:
-                return self.async_create_entry(
-                    title="",
-                    data={
-                        CONF_DEVICES: list(user_input.get(CONF_DEVICES, [])),
-                        CONF_DETECTION_TYPES: list(user_input.get(CONF_DETECTION_TYPES, [])),
-                        CONF_BATTERY_LOW: low,
-                        CONF_BATTERY_CRITICAL: critical,
-                        CONF_OFFLINE_DELAY: int(user_input[CONF_OFFLINE_DELAY]),
-                        CONF_EVENTS_ENABLED: bool(user_input[CONF_EVENTS_ENABLED]),
-                        CONF_EXPERIMENTAL_ENABLED: bool(user_input[CONF_EXPERIMENTAL_ENABLED]),
-                        CONF_EXPERIMENTAL_FEATURES: list(
-                            user_input.get(CONF_EXPERIMENTAL_FEATURES, [])
-                        ),
-                    },
-                )
+                self._base = {
+                    CONF_DEVICES: list(user_input.get(CONF_DEVICES, [])),
+                    CONF_DETECTION_TYPES: list(user_input.get(CONF_DETECTION_TYPES, [])),
+                    CONF_BATTERY_LOW: low,
+                    CONF_BATTERY_CRITICAL: critical,
+                    CONF_OFFLINE_DELAY: int(user_input[CONF_OFFLINE_DELAY]),
+                    CONF_EVENTS_ENABLED: bool(user_input[CONF_EVENTS_ENABLED]),
+                    CONF_EXPERIMENTAL_ENABLED: bool(user_input[CONF_EXPERIMENTAL_ENABLED]),
+                }
+                if self._base[CONF_EXPERIMENTAL_ENABLED]:
+                    return await self.async_step_experimental()
+                return self._finish({})
 
         choices = _device_choices(self.hass, list(entry.data.get(CONF_REOLINK_ENTRIES, [])))
         valid = {c["value"] for c in choices}
@@ -228,17 +238,6 @@ class ReolinkManagerOptionsFlow(OptionsFlow):
                 vol.Required(
                     CONF_EXPERIMENTAL_ENABLED, default=opts.get(CONF_EXPERIMENTAL_ENABLED, False)
                 ): BooleanSelector(),
-                vol.Optional(
-                    CONF_EXPERIMENTAL_FEATURES,
-                    default=opts.get(CONF_EXPERIMENTAL_FEATURES, []),
-                ): SelectSelector(
-                    SelectSelectorConfig(
-                        options=list(EXPERIMENTAL_FEATURES),
-                        multiple=True,
-                        mode=SelectSelectorMode.LIST,
-                        translation_key="experimental_features",
-                    )
-                ),
             }
         )
         return self.async_show_form(
@@ -250,3 +249,85 @@ class ReolinkManagerOptionsFlow(OptionsFlow):
                 "update_info": _update_info(self.hass, entry),
             },
         )
+
+    async def async_step_experimental(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Zweiter Schritt, nur bei eingeschaltetem Hauptschalter."""
+        opts = self.config_entry.options
+        if user_input is not None:
+            return self._finish(
+                {
+                    CONF_EXPERIMENTAL_FEATURES: [
+                        f for f in user_input.get(CONF_EXPERIMENTAL_FEATURES, []) if f in EXPERIMENTAL_FEATURES
+                    ],
+                    CONF_GALLERY_COUNT: int(user_input[CONF_GALLERY_COUNT]),
+                    CONF_PUSH_TARGETS: list(user_input.get(CONF_PUSH_TARGETS, [])),
+                    CONF_PUSH_DETECTIONS: list(user_input.get(CONF_PUSH_DETECTIONS, [])),
+                    CONF_PUSH_COOLDOWN: int(user_input[CONF_PUSH_COOLDOWN]),
+                    CONF_PUSH_PATH: str(user_input.get(CONF_PUSH_PATH, "")).strip(),
+                }
+            )
+        notify = self.hass.services.async_services().get("notify", {})
+        targets = sorted(name for name in notify if name.startswith("mobile_app_"))
+        chosen = [t for t in opts.get(CONF_PUSH_TARGETS, []) if t in targets]
+        schema = vol.Schema(
+            {
+                vol.Optional(
+                    CONF_EXPERIMENTAL_FEATURES,
+                    default=[f for f in opts.get(CONF_EXPERIMENTAL_FEATURES, []) if f in EXPERIMENTAL_FEATURES],
+                ): SelectSelector(
+                    SelectSelectorConfig(
+                        options=list(EXPERIMENTAL_FEATURES),
+                        multiple=True,
+                        mode=SelectSelectorMode.LIST,
+                        translation_key="experimental_features",
+                    )
+                ),
+                vol.Required(
+                    CONF_GALLERY_COUNT, default=opts.get(CONF_GALLERY_COUNT, DEFAULT_GALLERY_COUNT)
+                ): NumberSelector(
+                    NumberSelectorConfig(min=1, max=GALLERY_MAX_COUNT, step=1, mode=NumberSelectorMode.BOX)
+                ),
+                vol.Optional(CONF_PUSH_TARGETS, default=chosen): SelectSelector(
+                    SelectSelectorConfig(options=targets, multiple=True, mode=SelectSelectorMode.DROPDOWN)
+                ),
+                vol.Optional(
+                    CONF_PUSH_DETECTIONS,
+                    default=opts.get(CONF_PUSH_DETECTIONS, DEFAULT_PUSH_DETECTIONS),
+                ): SelectSelector(
+                    SelectSelectorConfig(
+                        options=DETECTION_KINDS,
+                        multiple=True,
+                        mode=SelectSelectorMode.LIST,
+                        translation_key="detection_types",
+                    )
+                ),
+                vol.Required(
+                    CONF_PUSH_COOLDOWN, default=opts.get(CONF_PUSH_COOLDOWN, DEFAULT_PUSH_COOLDOWN)
+                ): NumberSelector(
+                    NumberSelectorConfig(min=0, max=3600, step=5, mode=NumberSelectorMode.BOX, unit_of_measurement="s")
+                ),
+                vol.Optional(
+                    CONF_PUSH_PATH, default=opts.get(CONF_PUSH_PATH, "")
+                ): TextSelector(),
+            }
+        )
+        return self.async_show_form(step_id="experimental", data_schema=schema)
+
+    def _finish(self, experimental: dict[str, Any]) -> ConfigFlowResult:
+        """Gespeicherte experimentelle Werte bleiben erhalten, auch bei ausgeschaltetem Hauptschalter."""
+        old = self.config_entry.options
+        kept = {
+            key: old[key]
+            for key in (
+                CONF_EXPERIMENTAL_FEATURES,
+                CONF_GALLERY_COUNT,
+                CONF_PUSH_TARGETS,
+                CONF_PUSH_DETECTIONS,
+                CONF_PUSH_COOLDOWN,
+                CONF_PUSH_PATH,
+            )
+            if key in old
+        }
+        return self.async_create_entry(title="", data={**kept, **self._base, **experimental})

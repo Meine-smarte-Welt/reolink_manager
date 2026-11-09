@@ -1,4 +1,4 @@
-# SHA256 (Inhalt ab Zeile 2, d.h. dieser Datei ohne diese erste Zeile): d3344ec8b46182b48fb244b437cc5ec50c428bb46c88ac893065c4128bc3468c
+# SHA256 (Inhalt ab Zeile 2, d.h. dieser Datei ohne diese erste Zeile): 61f2503409dce478f0fa13e9f637573d139d1911097ad45142cc19b6937bf14c
 # Beispiel: Karte mit Standardwerten. Experimentelle Funktionen müssen zusätzlich
 # in den Optionen der Integration eingeschaltet sein (siehe EXPERIMENTELL.md).
 type: custom:reolink-manager-card
@@ -8,3 +8,5 @@ default_tab: cameras
 zoom: 100
 max_rows: 50
 read_only: false
+live_auto: true        # Standbild beim Öffnen des Popups sofort laden (false = nur per Knopf)
+show_gallery: true     # Galerie-Tab (braucht die experimentelle Funktion „gallery“)

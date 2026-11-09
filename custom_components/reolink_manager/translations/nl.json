@@ -43,8 +43,7 @@
           "battery_critical": "Batterij kritiek vanaf (%)",
           "offline_delay": "Offline-melding na (seconden)",
           "events_enabled": "Gebeurtenissen verzenden",
-          "experimental_enabled": "Experimentele functies tonen",
-          "experimental_features": "Experimentele functies"
+          "experimental_enabled": "Experimentele functies tonen"
         },
         "data_description": {
           "devices": "Leeg laten om alle apparaten van de gekozen Reolink-items te beheren.",
@@ -52,9 +51,28 @@
           "battery_low": "Vanaf dit niveau geldt de batterij als laag.",
           "battery_critical": "Vanaf dit niveau geldt de batterij als kritiek (hoogstens zo hoog als \"laag\").",
           "offline_delay": "Accu-camera's haken soms kort af. De gebeurtenis \"offline\" komt pas na deze tijd. 0 = direct.",
-          "events_enabled": "Stuurt Home Assistant-gebeurtenissen zoals reolink_manager_device_offline (alleen met de experimentele functie \"Gebeurtenissen\").",
-          "experimental_enabled": "Hoofdschakelaar. Experimentele functies zijn ongetest en zonder hem volledig verborgen.",
-          "experimental_features": "Alleen actief als de hoofdschakelaar aan staat. Kies gericht wat je wilt testen."
+          "events_enabled": "Verstuurt Home Assistant-gebeurtenissen zoals reolink_manager_device_offline.",
+          "experimental_enabled": "Hoofdschakelaar. Experimentele functies zijn ongetest. Bij „Aan” volgt een tweede stap waarin je losse functies kiest."
+        }
+      },
+      "experimental": {
+        "title": "Experimentele functies",
+        "description": "Deze functies zijn ongetest. Kies wat je wilt testen. Live-beeld en galerij kunnen accu-camera's wekken.",
+        "data": {
+          "experimental_features": "Experimentele functies",
+          "gallery_count": "Aantal galerijvideo's per camera",
+          "push_targets": "Smartphones voor pushmeldingen",
+          "push_detections": "Detecties die een pushmelding activeren",
+          "push_cooldown": "Blokkeertijd per camera en detectie (seconden)",
+          "push_path": "Dashboardpad voor tikken op de melding"
+        },
+        "data_description": {
+          "experimental_features": "Alleen werkzaam als de hoofdschakelaar aan staat.",
+          "gallery_count": "De nieuwste opnames in lage resolutie worden geladen (1 tot 20).",
+          "push_targets": "Mobile-app-diensten (notify.mobile_app_…). Meerdere mogelijk. Leeg = geen pushmeldingen. Werkt met de functie „Push”.",
+          "push_detections": "Alleen deze detectiesoorten sturen een bericht.",
+          "push_cooldown": "Binnen deze tijd stuurt dezelfde camera geen tweede bericht voor dezelfde detectie. 0 = geen blokkering.",
+          "push_path": "Dashboard met de kaart, bijv. /lovelace/camera. Tikken op de melding opent daar het live-beeld van de camera."
         }
       }
     },
@@ -79,22 +97,32 @@
     },
     "experimental_features": {
       "options": {
-        "overview": "Overzicht: camera's, batterij, detecties, updates, opslag, hub (alleen lezen)",
-        "sensors": "Overzichtssensoren",
-        "events": "Home Assistant-gebeurtenissen",
         "controls": "Bediening: schakelaars en keuzelijsten (schrijft)",
         "ptz": "PTZ-bediening (schrijft)",
-        "refresh": "Camera verversen en wekken (schrijft)"
+        "refresh": "Camera verversen en wekken (schrijft)",
+        "live": "Live-beeld in de camera-popup (kan accu-camera's wekken)",
+        "gallery": "Galerij: nieuwste opnames per camera",
+        "push": "Pushmelding met beeld bij detectie"
       }
     }
   },
   "entity": {
     "sensor": {
-      "devices": {"name": "Apparaten"},
-      "offline": {"name": "Offline"},
-      "battery_low": {"name": "Batterij laag"},
-      "battery_critical": {"name": "Batterij kritiek"},
-      "updates": {"name": "Updates beschikbaar"}
+      "devices": {
+        "name": "Apparaten"
+      },
+      "offline": {
+        "name": "Offline"
+      },
+      "battery_low": {
+        "name": "Batterij laag"
+      },
+      "battery_critical": {
+        "name": "Batterij kritiek"
+      },
+      "updates": {
+        "name": "Updates beschikbaar"
+      }
     }
   },
   "services": {
@@ -102,28 +130,46 @@
       "name": "Apparaten opnieuw inlezen",
       "description": "Leest apparaten en entiteiten van de Reolink-integratie opnieuw in.",
       "fields": {
-        "entry_id": {"name": "Item", "description": "Item-ID van Reolink Manager (optioneel)."}
+        "entry_id": {
+          "name": "Item",
+          "description": "Item-ID van Reolink Manager (optioneel)."
+        }
       }
     },
     "check_update": {
       "name": "Op nieuwe versie controleren",
       "description": "Vraagt GitHub naar een nieuwere versie van Reolink Manager.",
       "fields": {
-        "entry_id": {"name": "Item", "description": "Item-ID van Reolink Manager (optioneel)."}
+        "entry_id": {
+          "name": "Item",
+          "description": "Item-ID van Reolink Manager (optioneel)."
+        }
       }
     },
     "refresh_device": {
       "name": "Camera verversen",
       "description": "Start een volledige update van de Reolink-entiteiten. Dit wekt accu-camera's en kost batterij. Experimenteel.",
       "fields": {
-        "device_id": {"name": "Apparaat", "description": "Reolink-apparaat dat ververst moet worden."},
-        "entry_id": {"name": "Item", "description": "Item-ID van Reolink Manager (optioneel)."}
+        "device_id": {
+          "name": "Apparaat",
+          "description": "Reolink-apparaat dat ververst moet worden."
+        },
+        "entry_id": {
+          "name": "Item",
+          "description": "Item-ID van Reolink Manager (optioneel)."
+        }
       }
     }
   },
   "exceptions": {
-    "no_entry": {"message": "Reolink Manager is niet geladen."},
-    "experimental_disabled": {"message": "Deze functie is experimenteel en niet ingeschakeld."},
-    "unknown_device": {"message": "Het apparaat wordt niet door Reolink Manager beheerd."}
+    "no_entry": {
+      "message": "Reolink Manager is niet geladen."
+    },
+    "experimental_disabled": {
+      "message": "Deze functie is experimenteel en niet ingeschakeld."
+    },
+    "unknown_device": {
+      "message": "Het apparaat wordt niet door Reolink Manager beheerd."
+    }
   }
 }
