@@ -1,4 +1,4 @@
-# SHA256 (Inhalt ab Zeile 2, d.h. dieser Datei ohne diese erste Zeile): 20e3d179daa72badb5133e04f5b32b6aa5b134a5594c0396e4f6f18935208fdf
+# SHA256 (Inhalt ab Zeile 2, d.h. dieser Datei ohne diese erste Zeile): aeac82f3824b3c7657da437636bc26d107c2b2bb066e4422de5bfee1a647c76b
 """Datenmodell, Zwischenspeicher, Aktionen und Ereignisse des Reolink Managers.
 
 Der Manager spricht nie selbst mit den Kameras. Er liest nur Geräte-, Entitäts-
@@ -12,7 +12,7 @@ import logging
 import time
 from collections import deque
 from collections.abc import Callable
-from datetime import timedelta
+from datetime import date, timedelta
 from functools import partial
 from typing import Any
 
@@ -251,6 +251,10 @@ class ReolinkManager:
     # ------------------------------------------------------------------
     @property
     def selected_reolink_entries(self) -> list[str]:
+        """Auswahl aus den Optionen (nachträglich änderbar), sonst aus der Einrichtung."""
+        chosen = self.entry.options.get(CONF_REOLINK_ENTRIES)
+        if chosen:
+            return list(chosen)
         return list(self.entry.data.get(CONF_REOLINK_ENTRIES, []))
 
     @property
@@ -464,7 +468,8 @@ class ReolinkManager:
             return 0
         detected, kinds, test_text = self._push_lang()
         camera = self._camera_entity(device_id)
-        url = f"{self.push_path}{'&' if '?' in self.push_path else '?'}reolink_live={device_id}"
+        sep = "&" if "?" in self.push_path else "?"
+        url = f"{self.push_path}{sep}reolink_live={device_id}&reolink_t={int(time.time())}"
         payload: dict[str, Any] = {
             "image": f"/api/camera_proxy/{camera}" if camera else None,
             "clickAction": url,
@@ -557,7 +562,7 @@ class ReolinkManager:
                 kind = "camera"
             via = dev_reg.async_get(dev.via_device_id) if dev.via_device_id else None
             ents: list[dict[str, Any]] = []
-            for ent in er.async_entries_for_device(ent_reg, dev.id):
+            for ent in er.async_entries_for_device(ent_reg, dev.id, include_disabled_entities=True):
                 if ent.platform != REOLINK_DOMAIN:
                     continue
                 role = classify_entity(
@@ -566,12 +571,15 @@ class ReolinkManager:
                     ent.unique_id,
                     ent.device_class or ent.original_device_class,
                 )
+                if ent.disabled_by is not None and role != "storage":
+                    continue  # Deaktiviertes bleibt unsichtbar, nur Speichersensoren (standardmäßig aus) zählen
                 info = {
                     "entity_id": ent.entity_id,
                     "domain": ent.domain,
                     "role": role,
                     "key": ent.translation_key or _tail(ent.unique_id),
                     "name": ent.name or ent.original_name or ent.translation_key or ent.entity_id,
+                    "disabled": ent.disabled_by is not None,
                 }
                 ents.append(info)
                 entities[ent.entity_id] = {**info, "device": dev.id}
@@ -705,7 +713,7 @@ class ReolinkManager:
             "sleeping": sleeping,
             "battery": battery,
             "wifi": simple("wifi"),
-            "storage": simple("storage"),
+            "storage": self._storage_view(info, simple("storage")),
             "detections": detections,
             "detecting": [d["kind"] for d in detections if d["on"]],
             "update": update,
@@ -765,6 +773,15 @@ class ReolinkManager:
                 if self.feature_enabled("gallery"):
                     view["gallery"] = {"entity": camera}
         return view
+
+    @staticmethod
+    def _storage_view(info: dict[str, Any], base: dict[str, Any] | None) -> dict[str, Any] | None:
+        """Speicher: auch ohne Wert anzeigen (Speichersensoren sind bei Reolink standardmäßig deaktiviert)."""
+        ents = [e for e in info["entities"] if e["role"] == "storage"]
+        if base is None:
+            return {"entity": None, "value": None, "unit": None, "disabled": False} if info["kind"] == "hub" else None
+        base["disabled"] = bool(ents) and all(e["disabled"] for e in ents)
+        return base
 
     @staticmethod
     def _refresh_entity(info: dict[str, Any]) -> str | None:
@@ -979,6 +996,8 @@ class ReolinkManager:
                 await self._async_test_push(msg.get("device"))
             elif action == "ptz":
                 await self._async_ptz(msg, context)
+            elif action == "enable_storage":
+                self._async_enable_storage(msg.get("device"))
             else:
                 raise ActionError("not_allowed")
         except FeatureDisabled as err:
@@ -991,6 +1010,24 @@ class ReolinkManager:
         else:
             if action != "ptz":  # Halten-Bewegung erzeugt viele Aufrufe, nur Fehler melden
                 self.respond(action, "ok")
+
+    def _async_enable_storage(self, device_id: str | None) -> None:
+        """Deaktivierte Speichersensoren des Geräts aktivieren (Reolink liefert sie standardmäßig abgeschaltet)."""
+        self._require_feature("controls")
+        info = self._devices.get(device_id or "")
+        if info is None:
+            raise ActionError("unknown_device")
+        ent_reg = er.async_get(self.hass)
+        changed = 0
+        for ent in info["entities"]:
+            if ent["role"] != "storage" or not ent["disabled"]:
+                continue
+            reg = ent_reg.async_get(ent["entity_id"])
+            if reg is not None and reg.disabled_by is not None:
+                ent_reg.async_update_entity(ent["entity_id"], disabled_by=None)
+                changed += 1
+        if not changed:
+            raise ActionError("not_allowed")
 
     async def _async_test_push(self, device_id: str | None) -> None:
         self._require_feature("push")
@@ -1005,13 +1042,13 @@ class ReolinkManager:
         if await self._async_push(device_id, None, test=True) == 0:
             raise ActionError("call_failed")
 
-    async def async_gallery(self, device_id: str) -> dict[str, Any]:
+    async def async_gallery(self, device_id: str, count: int | None = None) -> dict[str, Any]:
         """Neueste Aufnahmen (niedrige Auflösung) aus der Medienquelle der Reolink-Integration."""
         self._require_feature("gallery")
         info = self._devices.get(device_id)
         if info is None or info["kind"] != "camera":
             raise ActionError("unknown_device")
-        count = self.gallery_count
+        count = max(1, min(int(count), GALLERY_MAX_COUNT)) if count else self.gallery_count
         cached = self._gallery_cache.get(device_id)
         if cached and time.monotonic() - cached[0] < GALLERY_CACHE_SECONDS and cached[1]["count"] == count:
             return cached[1]
@@ -1065,12 +1102,71 @@ class ReolinkManager:
                         "id": file.media_content_id,
                         "title": file.title,
                         "day": f"{y:04d}-{m:02d}-{d:02d}",
+                        "start": self._epoch(y, m, d, file.title),
                         "thumbnail": file.thumbnail,
                     }
                 )
                 if len(items) >= count:
                     return {"count": count, "items": items}
         return {"count": count, "items": items}
+
+    @staticmethod
+    def _epoch(y: int, m: int, d: int, title: str) -> int | None:
+        """Startzeit (Unix-Sekunden, Zeitzone von Home Assistant) aus Tag und Titel „HH:MM:SS …“."""
+        try:
+            hh, mm, ss = (int(x) for x in (title or "").split(" ", 1)[0].split(".")[0].split(":")[:3])
+            local = dt_util.start_of_local_day(date(y, m, d)) + timedelta(
+                hours=hh, minutes=mm, seconds=ss
+            )
+            return int(local.timestamp())
+        except (ValueError, TypeError):
+            return None
+
+    async def async_download(self, device_id: str, day: str, title: str) -> dict[str, Any]:
+        """Hochauflösende Aufnahme (Hauptstream) zur Aufnahme der Galerie finden und Download-Adresse liefern."""
+        self._require_feature("gallery")
+        info = self._devices.get(device_id)
+        if info is None or info["kind"] != "camera":
+            raise ActionError("unknown_device")
+        start = (title or "").split(" ", 1)[0]
+        try:
+            y, m, d = (int(x) for x in day.split("-"))
+        except ValueError:
+            raise ActionError("download_failed") from None
+        cams = {e["entity_id"] for e in info["entities"] if e["domain"] == "camera"}
+        from homeassistant.components import media_source  # noqa: PLC0415
+
+        try:
+            async with asyncio.timeout(GALLERY_TIMEOUT):
+                root = await media_source.async_browse_media(self.hass, f"media-source://{REOLINK_DOMAIN}")
+                cam_node = next(
+                    (
+                        c
+                        for c in root.children or []
+                        if (c.thumbnail or "").split("?")[0].rsplit("/", 1)[-1] in cams
+                        and (c.identifier or "").startswith("CAM|")
+                    ),
+                    None,
+                )
+                if cam_node is None:
+                    raise ActionError("gallery_unavailable")
+                _, entry_id, channel = cam_node.identifier.split("|", 2)
+                node = await media_source.async_browse_media(
+                    self.hass,
+                    f"media-source://{REOLINK_DOMAIN}/DAY|{entry_id}|{channel}|main|{y}|{m}|{d}",
+                )
+                match = next(
+                    (c for c in node.children or [] if c.can_play and (c.title or "").startswith(start)), None
+                )
+                if match is None:
+                    raise ActionError("download_not_found")
+                play = await media_source.async_resolve_media(self.hass, match.media_content_id, None)
+        except ActionError:
+            raise
+        except (TimeoutError, HomeAssistantError, ValueError, KeyError, AttributeError):
+            _LOGGER.debug("Download konnte nicht vorbereitet werden", exc_info=True)
+            raise ActionError("download_failed") from None
+        return {"url": play.url, "mime_type": play.mime_type, "title": match.title, "id": match.media_content_id}
 
     async def async_refresh_device(self, device_id: str, context: Context | None = None) -> None:
         """Für den Service refresh_device."""

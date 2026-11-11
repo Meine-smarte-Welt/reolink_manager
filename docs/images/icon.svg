@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+<circle cx="256" cy="256" r="256" fill="#fff"/>
+<path fill="#3b6642" fill-rule="evenodd" d="M256 0a256 256 0 1 0 0 512a256 256 0 1 0 0-512zM256 15a241 241 0 1 1 0 482a241 241 0 1 1 0-482z"/>
+<path fill="#3b6642" fill-rule="evenodd" d="M247.5 78a182.5 187.5 0 1 0 0 375a182.5 187.5 0 1 0 0-375zM247.5 129a132.5 136.5 0 1 1 0 273a132.5 136.5 0 1 1 0-273z"/>
+<ellipse cx="247.5" cy="265.5" rx="71.5" ry="73.5" fill="#2e5034"/>
+<ellipse cx="207.5" cy="224.5" rx="27" ry="28" fill="#ed8c2a"/>
+<circle cx="390" cy="117" r="60" fill="#3b6642"/>
+<ellipse cx="390" cy="117" rx="49.5" ry="50.5" fill="#ed8c2a"/>
+</svg>

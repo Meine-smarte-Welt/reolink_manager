@@ -37,6 +37,7 @@
         "title": "Reolink Manager",
         "description": "Geïnstalleerde versie: {version}\n{update_info}",
         "data": {
+          "reolink_entries": "Reolink-items (hubs, NVR's, camera's)",
           "devices": "Camera's en apparaten",
           "detection_types": "Getoonde detectiesoorten",
           "battery_low": "Batterij laag vanaf (%)",
@@ -46,6 +47,7 @@
           "experimental_enabled": "Experimentele functies tonen"
         },
         "data_description": {
+          "reolink_entries": "Hier kun je verkeerd gekozen items (herkenbaar aan het IP-adres) weer uitschakelen. Uitgeschakelde apparaten verdwijnen uit de kaart. Minstens één item.",
           "devices": "Leeg laten om alle apparaten van de gekozen Reolink-items te beheren.",
           "detection_types": "Alleen deze detecties verschijnen in de kaart.",
           "battery_low": "Vanaf dit niveau geldt de batterij als laag.",
@@ -69,7 +71,8 @@
       }
     },
     "error": {
-      "critical_above_low": "\"Kritiek\" mag niet hoger zijn dan \"laag\"."
+      "critical_above_low": "\"Kritiek\" mag niet hoger zijn dan \"laag\".",
+      "no_selection": "Kies minstens één Reolink-item."
     }
   },
   "selector": {

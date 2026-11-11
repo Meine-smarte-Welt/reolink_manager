@@ -1,4 +1,4 @@
-# SHA256 (Inhalt ab Zeile 2, d.h. dieser Datei ohne diese erste Zeile): ca896eabf6abe476493e7f1d5280e670c1e8f08abca7a54efe926749183629f6
+# SHA256 (Inhalt ab Zeile 2, d.h. dieser Datei ohne diese erste Zeile): 3860e2a248f3e3679ebb5e3fafcc4a1325dfc4019ded8bf23f0b9042808acc99
 """Einrichtung, Neu-Konfigurieren und Optionen des Reolink Managers."""
 from __future__ import annotations
 
@@ -70,10 +70,15 @@ _UPDATE_TEXTS = {
 
 
 def _reolink_choices(hass: HomeAssistant) -> list[SelectOptionDict]:
-    return [
-        SelectOptionDict(value=entry.entry_id, label=entry.title or entry.entry_id)
-        for entry in hass.config_entries.async_entries(REOLINK_DOMAIN)
-    ]
+    """Reolink-Einträge mit Name und Adresse, damit falsch gewählte erkennbar sind."""
+    result = []
+    for entry in hass.config_entries.async_entries(REOLINK_DOMAIN):
+        host = entry.data.get("host")
+        title = entry.title or entry.entry_id
+        result.append(
+            SelectOptionDict(value=entry.entry_id, label=f"{title} ({host})" if host else title)
+        )
+    return result
 
 
 def _entries_schema(hass: HomeAssistant, default: list[str]) -> vol.Schema:
@@ -180,8 +185,11 @@ class ReolinkManagerOptionsFlow(OptionsFlow):
             critical = int(user_input[CONF_BATTERY_CRITICAL])
             if critical > low:
                 errors["base"] = "critical_above_low"
+            elif not user_input.get(CONF_REOLINK_ENTRIES):
+                errors["base"] = "no_selection"
             else:
                 self._base = {
+                    CONF_REOLINK_ENTRIES: list(user_input[CONF_REOLINK_ENTRIES]),
                     CONF_DEVICES: list(user_input.get(CONF_DEVICES, [])),
                     CONF_DETECTION_TYPES: list(user_input.get(CONF_DETECTION_TYPES, [])),
                     CONF_BATTERY_LOW: low,
@@ -194,10 +202,20 @@ class ReolinkManagerOptionsFlow(OptionsFlow):
                     return await self.async_step_experimental()
                 return self._finish({})
 
-        choices = _device_choices(self.hass, list(entry.data.get(CONF_REOLINK_ENTRIES, [])))
+        r_choices = _reolink_choices(self.hass)
+        r_valid = {x["value"] for x in r_choices}
+        current = [
+            e
+            for e in (opts.get(CONF_REOLINK_ENTRIES) or entry.data.get(CONF_REOLINK_ENTRIES, []))
+            if e in r_valid
+        ]
+        choices = _device_choices(self.hass, current)
         valid = {c["value"] for c in choices}
         schema = vol.Schema(
             {
+                vol.Required(CONF_REOLINK_ENTRIES, default=current or sorted(r_valid)): SelectSelector(
+                    SelectSelectorConfig(options=r_choices, multiple=True, mode=SelectSelectorMode.LIST)
+                ),
                 vol.Optional(
                     CONF_DEVICES, default=[d for d in opts.get(CONF_DEVICES, []) if d in valid]
                 ): SelectSelector(

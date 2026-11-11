@@ -1,8 +1,24 @@
-// SHA256 (Inhalt ab Zeile 2, d.h. dieser Datei ohne diese erste Zeile): 07668a772465f7053d3828206a72241e0e6ccdd2d8abc3173e852fd753232184
+// SHA256 (Inhalt ab Zeile 2, d.h. dieser Datei ohne diese erste Zeile): 71ffb14018aa9e526d3d1662fce3fc0acc7292fbe53673b53950d3f1180ddba5
 /* Reolink Manager – Karte für Home Assistant (Meine smarte Welt) */
-const CARD_VERSION = "0.0.3";
+const CARD_VERSION = "0.0.4";
 const TAG = "reolink-manager-card";
 const WS = "reolink_manager";
+const DEEP_LIVE_MAX_AGE = 90; // Sekunden: jünger = Livebild, älter = passende Aufnahme aus der Galerie
+
+/* Reolink-Logo: farbig für den Kartentitel, einfarbig als Home-Assistant-Iconset „reolink_manager:logo“ */
+const LOGO_URI = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512' width='512' height='512'%3E%3Ccircle cx='256' cy='256' r='256' fill='%23fff'/%3E%3Cpath fill='%233b6642' fill-rule='evenodd' d='M256 0a256 256 0 1 0 0 512a256 256 0 1 0 0-512zM256 15a241 241 0 1 1 0 482a241 241 0 1 1 0-482z'/%3E%3Cpath fill='%233b6642' fill-rule='evenodd' d='M247.5 78a182.5 187.5 0 1 0 0 375a182.5 187.5 0 1 0 0-375zM247.5 129a132.5 136.5 0 1 1 0 273a132.5 136.5 0 1 1 0-273z'/%3E%3Cellipse cx='247.5' cy='265.5' rx='71.5' ry='73.5' fill='%232e5034'/%3E%3Cellipse cx='207.5' cy='224.5' rx='27' ry='28' fill='%23ed8c2a'/%3E%3Ccircle cx='390' cy='117' r='60' fill='%233b6642'/%3E%3Cellipse cx='390' cy='117' rx='49.5' ry='50.5' fill='%23ed8c2a'/%3E%3C/svg%3E";
+const LOGO_PATH = "M23.96 11.02 23.73 9.47 23.30 7.96 22.67 6.52 22.29 5.83 21.82 5.11 21.84 5.72 21.75 6.30 22.29 7.34 22.76 8.54 23.04 9.62 23.24 10.89 23.30 12 23.24 13.11 23.11 14.02 22.86 15.10 22.44 16.32 21.96 17.33 21.29 18.43 20.61 19.31 19.86 20.12 19.02 20.85 17.97 21.59 17 22.13 15.63 22.70 14.92 22.91 14.02 23.11 13.11 23.24 12.37 23.29 11.45 23.28 10.71 23.22 9.98 23.11 9.08 22.91 8.37 22.70 7.51 22.36 6.67 21.96 6.03 21.59 5.27 21.07 4.69 20.61 3.88 19.86 3.27 19.17 2.61 18.28 2.04 17.33 1.56 16.32 1.19 15.28 0.92 14.20 0.78 13.29 0.71 12.37 0.73 11.26 0.85 10.16 1.09 9.08 1.43 8.02 1.87 7 2.31 6.19 2.93 5.27 3.63 4.41 4.28 3.75 5.12 3.04 5.88 2.51 6.67 2.04 7.68 1.56 8.72 1.19 9.62 0.96 10.53 0.80 11.45 0.72 12.37 0.71 13.29 0.78 14.38 0.96 15.46 1.24 16.49 1.64 17.34 2.05 17.93 1.94 18.53 1.93 17.66 1.42 16.77 0.99 15.86 0.64 14.92 0.36 13.95 0.16 12.98 0.04 12 0 11.02 0.04 9.85 0.19 8.70 0.46 7.59 0.84 6.52 1.33 5.50 1.91 4.54 2.60 3.65 3.38 2.85 4.24 2.13 5.17 1.51 6.17 0.99 7.23 0.58 8.33 0.27 9.47 0.08 10.63 0 11.80 0.04 12.98 0.19 14.15 0.46 15.30 0.84 16.41 1.33 17.48 1.91 18.50 2.60 19.46 3.38 20.35 4.24 21.15 5.17 21.87 6.17 22.49 7.23 23.01 8.33 23.42 9.47 23.73 10.63 23.92 11.80 24 12.98 23.96 14.15 23.81 15.30 23.54 16.41 23.16 17.48 22.67 18.50 22.09 19.46 21.40 20.35 20.62 21.15 19.76 21.87 18.83 22.49 17.83 23.01 16.77 23.42 15.67 23.73 14.53 23.92 13.37 24 12.20zM20.13 11.73 20.04 11.01 19.90 10.31 19.70 9.62 19.41 8.86 18.69 9.02 17.99 9.03 17.25 8.89 16.57 8.61 17.17 9.62 17.57 10.69 17.78 11.82 17.79 12.97 17.60 14.10 17.22 15.18 16.65 16.17 15.92 17.04 15.05 17.77 14.53 18.09 13.98 18.36 12.91 18.70 11.80 18.84 10.69 18.77 9.61 18.50 8.58 18.04 7.66 17.39 7.21 16.97 6.80 16.50 6.44 16 6.12 15.46 5.86 14.89 5.66 14.30 5.43 13.18 5.39 12.55 5.41 11.92 5.49 11.30 5.63 10.69 6.03 9.62 6.33 9.07 6.67 8.55 7.07 8.07 7.51 7.63 7.98 7.24 8.50 6.90 9.04 6.62 9.61 6.39 10.69 6.12 11.30 6.05 11.91 6.05 13.01 6.21 13.60 6.39 14.16 6.62 15.16 7.20 14.87 6.52 14.73 5.78 14.74 5.08 14.91 4.34 13.95 3.99 12.86 3.75 11.74 3.66 10.76 3.70 9.93 3.83 9.12 4.03 8.33 4.33 7.57 4.69 6.85 5.14 6.17 5.65 5.55 6.23 4.99 6.87 4.49 7.56 4.06 8.30 3.70 9.08 3.42 9.89 3.21 10.73 3.09 11.58 3.05 12.45 3.09 13.31 3.21 14.16 3.42 15 3.70 15.81 4.06 16.59 4.49 17.33 4.99 18.02 5.55 18.66 6.17 19.24 6.85 19.75 7.57 20.20 8.33 20.57 9.12 20.86 9.93 21.07 10.76 21.19 11.60 21.23 12.44 21.19 13.27 21.07 14.08 20.86 14.88 20.57 15.51 20.26 16.24 19.83 16.92 19.33 17.55 18.76 18.12 18.13 18.64 17.45 19.08 16.71 19.45 15.94 19.75 15.13 19.96 14.30 20.10 13.45 20.16 12.59zM14.95 12.22 14.84 11.55 14.61 10.92 14.26 10.35 13.81 9.85 13.28 9.46 12.68 9.18 12.04 9.03 11.38 9.01 10.83 9.09 11.10 9.36 11.30 9.66 11.44 10.02 11.50 10.37 11.49 10.76 11.41 11.11 11.27 11.44 11.07 11.73 10.76 12.01 10.44 12.20 10.07 12.32 9.70 12.35 9.29 12.30 8.94 12.16 8.62 11.96 8.34 11.67 8.26 12.16 8.26 12.67 8.36 13.34 8.60 13.97 8.94 14.54 9.39 15.04 9.93 15.43 10.52 15.71 11.16 15.86 11.82 15.88 12.47 15.77 13.08 15.54 13.64 15.18 14.12 14.72 14.50 14.17 14.78 13.55 14.92 12.90zM10.99 10.46 10.87 9.96 10.58 9.55 10.15 9.29 9.66 9.21 9.19 9.34 8.79 9.64 8.53 10.08 8.46 10.59 8.58 11.08 8.88 11.50 9.30 11.76 9.79 11.83 10.27 11.71 10.66 11.40 10.92 10.97zM21.09 5.44 21.03 4.89 20.86 4.37 20.59 3.88 20.24 3.46 19.81 3.12 19.31 2.87 18.78 2.72 18.24 2.67 17.69 2.74 17.16 2.90 16.68 3.17 16.26 3.53 15.92 3.96 15.67 4.45 15.51 4.98 15.47 5.53 15.53 6.08 15.70 6.60 15.97 7.08 16.33 7.51 16.76 7.85 17.25 8.10 17.78 8.25 18.33 8.30 18.88 8.23 19.40 8.06 19.88 7.80 20.30 7.44 20.65 7.01 20.90 6.52 21.05 5.99z";
+(function registerIconset() {
+  try {
+    const get = async (name) => (["logo", "reolink", "reolink_manager"].includes(name) ? { path: LOGO_PATH } : undefined);
+    window.customIconsets = window.customIconsets || {};
+    if (!window.customIconsets.reolink_manager) window.customIconsets.reolink_manager = get;
+    window.customIcons = window.customIcons || {};
+    if (!window.customIcons.reolink_manager) {
+      window.customIcons.reolink_manager = { getIcon: get, getIconList: async () => [{ name: "logo", keywords: ["reolink", "kamera", "camera", "manager"] }] };
+    }
+  } catch (_) { /* Iconset optional */ }
+})();
 
 const TAB_ORDER = ["cameras", "battery", "detections", "updates", "storage", "gallery", "controls", "hub", "bridge"];
 const TAB_META = {
@@ -48,7 +64,7 @@ const DEFAULTS = {
   title: "Reolink Manager", show_title: true, entry_id: "", default_tab: "cameras", max_rows: 50, zoom: 100,
   show_stats: true, show_search: true, show_filter_bar: true, default_sort: "name",
   show_col_model: true, show_col_hub: true, show_col_battery: true, show_col_wifi: true, show_col_last: true,
-  read_only: false, show_experimental: false, live_auto: true,
+  read_only: false, show_experimental: false, live_auto: true, show_icon: true, icon: "",
 };
 TAB_ORDER.forEach((k) => { DEFAULTS[`show_${k}`] = true; });
 
@@ -140,6 +156,14 @@ const I18N = {
     gal_error: "Aufnahmen konnten nicht geladen werden: {e}", gal_reload: "Neu laden", gal_count: "{n} Aufnahmen", gal_limit: "Anzahl in den Optionen der Integration einstellbar (aktuell {n}).",
     gal_no_thumb: "Die Reolink-Integration liefert für Aufnahmen keine Vorschaubilder. Oben siehst du das aktuelle Kamerabild.", gal_snapshot: "Aktuelles Kamerabild", gal_snapshot_load: "Kamerabild laden",
     gal_play_loading: "Lade Video …", gal_play_failed: "Video lässt sich hier nicht abspielen.", gal_open_ha: "In Home Assistant öffnen", gal_close: "Schließen",
+    ed_show_icon: "Icon vor dem Titel anzeigen", ed_icon: "Icon (leer = Reolink-Logo, z. B. mdi:cctv oder reolink_manager:logo)",
+    gal_download: "Hochauflösendes Video herunterladen", gal_dl_busy: "Suche hochauflösende Aufnahme …", gal_dl_started: "Download gestartet.",
+    gal_dl_hls: "Direkter Download ist für diese Kamera nicht möglich. Die hochauflösende Aufnahme öffnet sich im Player.",
+    gal_deep_none: "Die passende Aufnahme ist noch nicht in der Galerie. Sie erscheint, sobald die Kamera sie gespeichert hat.",
+    storage_hint: "Reolink liefert die Speichersensoren (SD-Karte, Festplatte) standardmäßig deaktiviert. „Aktivieren“ schaltet sie ein. Home Assistant lädt die Reolink-Integration danach neu, die Werte erscheinen nach kurzer Zeit.",
+    storage_enable: "Aktivieren", storage_disabled: "Sensor deaktiviert", storage_none: "Kein Speichersensor",
+    ctl_tab_hint: "Schnellschalter je Gerät. Alle Einstellungen stehen im Popup.", ctl_open_full: "Alle Steuerungen",
+    err_download_failed: "Aufnahme konnte nicht für den Download vorbereitet werden", err_download_not_found: "Die hochauflösende Aufnahme wurde nicht gefunden",
     err_gallery_failed: "Aufnahmen konnten nicht geladen werden", err_gallery_unavailable: "Für diese Kamera gibt es keine Aufnahmen (keine SD-Karte oder Wiedergabe nicht unterstützt)", err_no_push_target: "Kein Smartphone ausgewählt",
     acc_push: "Push-Nachrichten", push_targets: "Smartphones", push_detections: "Erkennungen", push_cooldown: "Sperrzeit", push_path: "Dashboard-Pfad",
     push_test: "Test-Nachricht senden", push_test_hint: "Sendet eine Nachricht mit aktuellem Bild an die gewählten Smartphones. Der Tipp darauf öffnet das Live-Bild.",
@@ -239,6 +263,14 @@ const I18N = {
     gal_error: "Recordings could not be loaded: {e}", gal_reload: "Reload", gal_count: "{n} recordings", gal_limit: "Number can be set in the integration options (currently {n}).",
     gal_no_thumb: "The Reolink integration provides no preview images for recordings. Above you see the current camera image.", gal_snapshot: "Current camera image", gal_snapshot_load: "Load camera image",
     gal_play_loading: "Loading video …", gal_play_failed: "The video cannot be played here.", gal_open_ha: "Open in Home Assistant", gal_close: "Close",
+    ed_show_icon: "Show icon before the title", ed_icon: "Icon (empty = Reolink logo, e.g. mdi:cctv or reolink_manager:logo)",
+    gal_download: "Download high-resolution video", gal_dl_busy: "Looking for the high-resolution recording …", gal_dl_started: "Download started.",
+    gal_dl_hls: "Direct download is not possible for this camera. The high-resolution recording opens in the player.",
+    gal_deep_none: "The matching recording is not in the gallery yet. It appears as soon as the camera has saved it.",
+    storage_hint: "Reolink delivers the storage sensors (SD card, hard disk) disabled by default. “Enable” turns them on. Home Assistant then reloads the Reolink integration, the values appear shortly after.",
+    storage_enable: "Enable", storage_disabled: "Sensor disabled", storage_none: "No storage sensor",
+    ctl_tab_hint: "Quick switches per device. All settings are in the popup.", ctl_open_full: "All controls",
+    err_download_failed: "The recording could not be prepared for download", err_download_not_found: "The high-resolution recording was not found",
     err_gallery_failed: "Recordings could not be loaded", err_gallery_unavailable: "No recordings for this camera (no SD card or playback not supported)", err_no_push_target: "No smartphone selected",
     acc_push: "Push notifications", push_targets: "Smartphones", push_detections: "Detections", push_cooldown: "Lock time", push_path: "Dashboard path",
     push_test: "Send test message", push_test_hint: "Sends a message with the current image to the selected smartphones. Tapping it opens the live view.",
@@ -338,6 +370,14 @@ const I18N = {
     gal_error: "Opnames konden niet worden geladen: {e}", gal_reload: "Opnieuw laden", gal_count: "{n} opnames", gal_limit: "Aantal instelbaar in de opties van de integratie (nu {n}).",
     gal_no_thumb: "De Reolink-integratie levert geen voorbeeldbeelden voor opnames. Hierboven zie je het actuele camerabeeld.", gal_snapshot: "Actueel camerabeeld", gal_snapshot_load: "Camerabeeld laden",
     gal_play_loading: "Video laden …", gal_play_failed: "De video kan hier niet worden afgespeeld.", gal_open_ha: "Openen in Home Assistant", gal_close: "Sluiten",
+    ed_show_icon: "Pictogram vóór de titel tonen", ed_icon: "Pictogram (leeg = Reolink-logo, bijv. mdi:cctv of reolink_manager:logo)",
+    gal_download: "Video in hoge resolutie downloaden", gal_dl_busy: "Opname in hoge resolutie zoeken …", gal_dl_started: "Download gestart.",
+    gal_dl_hls: "Direct downloaden is voor deze camera niet mogelijk. De opname in hoge resolutie opent in de speler.",
+    gal_deep_none: "De bijbehorende opname staat nog niet in de galerij. Ze verschijnt zodra de camera haar heeft opgeslagen.",
+    storage_hint: "Reolink levert de opslagsensoren (SD-kaart, harde schijf) standaard uitgeschakeld. “Inschakelen” zet ze aan. Home Assistant laadt de Reolink-integratie daarna opnieuw, de waarden verschijnen kort daarna.",
+    storage_enable: "Inschakelen", storage_disabled: "Sensor uitgeschakeld", storage_none: "Geen opslagsensor",
+    ctl_tab_hint: "Snelschakelaars per apparaat. Alle instellingen staan in de popup.", ctl_open_full: "Alle bediening",
+    err_download_failed: "De opname kon niet voor download worden voorbereid", err_download_not_found: "De opname in hoge resolutie is niet gevonden",
     err_gallery_failed: "Opnames konden niet worden geladen", err_gallery_unavailable: "Geen opnames voor deze camera (geen SD-kaart of afspelen niet ondersteund)", err_no_push_target: "Geen smartphone gekozen",
     acc_push: "Pushmeldingen", push_targets: "Smartphones", push_detections: "Detecties", push_cooldown: "Blokkeertijd", push_path: "Dashboardpad",
     push_test: "Testbericht verzenden", push_test_hint: "Verstuurt een bericht met het actuele beeld naar de gekozen smartphones. Tikken erop opent het live-beeld.",
@@ -382,7 +422,8 @@ const CSS = `
 :host{display:block;container-type:inline-size;container-name:rm}
 ha-card{padding:0 0 12px;overflow:hidden}
 *{box-sizing:border-box}
-.header{padding:14px 16px 4px;font-size:1.25rem;font-weight:500}
+.header{display:flex;align-items:center;gap:10px;padding:14px 16px 4px;font-size:1.25rem;font-weight:500}
+.hicon{width:30px;height:30px;flex:none;--mdc-icon-size:30px;object-fit:contain;color:var(--rm-tab)}
 .banner{margin:8px 12px 0;padding:8px 12px;border-radius:8px;font-size:.88rem;border:1px solid var(--c);color:var(--primary-text-color);background:color-mix(in srgb,var(--c) 14%,transparent);display:flex;gap:8px;align-items:flex-start}
 .banner ha-icon{--mdc-icon-size:20px;color:var(--c);flex:none}
 .banner.error{--c:var(--rm-error)}.banner.warning{--c:var(--rm-warning)}.banner.info{--c:var(--rm-live)}
@@ -444,8 +485,13 @@ ha-card{padding:0 0 12px;overflow:hidden}
 .note{font-size:.82rem;color:var(--secondary-text-color);margin:6px 0}
 .note.warn{color:var(--rm-warning)}.note.err{color:var(--rm-error)}.note.ok{color:var(--rm-success)}
 .btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
-.pad{display:grid;grid-template-columns:repeat(3,48px);gap:6px;justify-content:center;margin:8px 0}
-.pad .btn{justify-content:center;height:40px}
+.pad{display:grid;grid-template-columns:repeat(3,52px);gap:6px;justify-content:center;margin:4px 0}
+.pad .btn{justify-content:center;height:44px}
+.ptzpanel{border:1px solid var(--divider-color);border-radius:8px;padding:6px 10px}
+.ptzrow{display:flex;gap:14px;align-items:center;justify-content:center;flex-wrap:wrap}
+.ptzside{display:flex;flex-direction:column;gap:6px;min-width:120px;flex:1;max-width:220px}
+.ptzlbl{display:flex;flex-direction:column;gap:2px;font-size:.75rem;color:var(--secondary-text-color)}
+.ptzpanel .note{margin:2px 0 0;font-size:.74rem}
 .backdrop{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:50;padding:12px}
 .popup{width:100%;max-width:440px;max-height:86vh;display:flex;flex-direction:column;border-radius:12px;background:var(--card-background-color,#fff);color:var(--primary-text-color);box-shadow:0 8px 32px rgba(0,0,0,.35)}
 .phead{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--divider-color)}
@@ -714,8 +760,18 @@ class ReolinkManagerCard extends HTMLElement {
     } else {
       body = this._banners() + this._tabsHtml() + this._contentHtml();
     }
-    const head = c.show_title !== false && c.title ? `<div class="header">${esc(c.title)}</div>` : "";
+    const icon = this._headerIcon();
+    const showTitle = c.show_title !== false && c.title;
+    const head = icon || showTitle ? `<div class="header">${icon}${showTitle ? `<span>${esc(c.title)}</span>` : ""}</div>` : "";
     return `<ha-card style="zoom:${zoom}">${head}${body}</ha-card>${this._toast ? `<div class="toast${this._toast.isErr ? " err" : ""}">${esc(this._toast.text)}</div>` : ""}`;
+  }
+
+  _headerIcon() {
+    const c = this._config;
+    if (c.show_icon === false) return "";
+    const name = String(c.icon || "").trim();
+    if (/^[a-z0-9_-]+:[a-z0-9_-]+$/i.test(name)) return `<ha-icon class="hicon" icon="${esc(name)}"></ha-icon>`;
+    return `<img class="hicon" alt="" src="${esc(LOGO_URI)}">`;
   }
 
   _banners() {
@@ -753,6 +809,8 @@ class ReolinkManagerCard extends HTMLElement {
     const tab = this._currentTab();
     if (tab === "bridge") return this._settingsHtml();
     if (tab === "gallery") return this._barHtml() + this._galleryHtml();
+    if (tab === "controls") return this._barHtml() + this._controlsTabHtml();
+    if (tab === "storage") return this._statsHtml() + this._barHtml() + this._storageNoteHtml() + this._listHtml(tab);
     return this._statsHtml() + this._barHtml() + this._listHtml(tab);
   }
 
@@ -784,7 +842,7 @@ class ReolinkManagerCard extends HTMLElement {
       if (tab === "updates") return !!d.update;
       if (tab === "storage") return !!d.storage;
       if (tab === "gallery") return !!d.gallery;
-      if (tab === "controls") return !!d.controls && Object.keys(d.controls).length > 0;
+      if (tab === "controls") return (!!d.controls && Object.keys(d.controls).length > 0) || !!d.scene;
       return true;
     });
     if (f === "offline") list = list.filter((d) => d.status === "offline");
@@ -815,6 +873,44 @@ class ReolinkManagerCard extends HTMLElement {
     const rows = all.slice(0, max).map((d) => this._rowHtml(d, tab)).join("");
     const more = all.length > max ? `<div class="more">${esc(this._t("more_rows", { n: all.length - max }))}</div>` : "";
     return `<div class="list" data-scroll="list">${rows}${more}</div>`;
+  }
+
+  _storageNoteHtml() {
+    const list = (this._data.devices || []).filter((d) => d.storage && d.storage.value == null);
+    return list.length ? `<div class="note" style="margin:8px 14px 0">${esc(this._t("storage_hint"))}</div>` : "";
+  }
+
+  /* Steuerung: Schnellschalter je Gerät als Akkordeon (nicht mehr dieselbe Liste wie „Kameras“) */
+  _controlsTabHtml() {
+    const t = (k, v) => this._t(k, v);
+    const list = this._devicesFor("controls");
+    if (!list.length) {
+      const anyFilter = this._ui.filter !== "all" || this._ui.search.trim();
+      return `<div class="list"><div class="empty">${esc(t(anyFilter ? "empty_filter" : "empty_list"))}</div></div>`;
+    }
+    const labels = { privacy: "ctl_privacy", record: "ctl_record", push: "ctl_push" };
+    const canW = this._canWrite();
+    let h = `<div class="settings" data-scroll="list"><div class="note">${esc(t("ctl_tab_hint"))}</div>`;
+    for (const d of list) {
+      let body = "";
+      for (const [role, x] of Object.entries(d.controls || {})) {
+        const col = x.on ? (role === "privacy" ? "var(--rm-warning)" : "var(--rm-success)") : "var(--rm-rowicon)";
+        const label = esc(t(x.on ? "on" : "off"));
+        const val = canW && x.available
+          ? `<button class="pill btnp" style="--c:${col}" data-act="toggle" data-ent="${esc(x.entity)}" data-on="${x.on ? 0 : 1}">${label}</button>`
+          : `<span class="pill" style="--c:${col}">${label}</span>`;
+        body += `<div class="settings-line"><span class="lbl">${esc(t(labels[role] || role))}</span><span class="val">${val}</span></div>`;
+      }
+      if (d.scene) {
+        body += canW
+          ? `<div class="settings-line"><span class="lbl">${esc(t("hub_scene"))}</span><select class="sel" style="max-width:55%" data-role="select" data-ent="${esc(d.scene.entity)}">${d.scene.options.map((o) => `<option${o === d.scene.current ? " selected" : ""}>${esc(o)}</option>`).join("")}</select></div>`
+          : this._line(t("hub_scene"), esc(d.scene.current));
+      }
+      body += `<div class="btns"><button class="btn small" data-act="open" data-dev="${esc(d.device)}">${this._ico("mdi:open-in-new")}${esc(t("ctl_open_full"))}</button></div>`;
+      const n = Object.keys(d.controls || {}).length + (d.scene ? 1 : 0);
+      h += this._acc(`c:${d.device}`, KIND_ICON[d.kind] || "mdi:cctv", d.name, body, { open: list.length === 1, meta: esc(String(n)) });
+    }
+    return `${h}</div>`;
   }
 
   _statusPill(d) {
@@ -857,7 +953,14 @@ class ReolinkManagerCard extends HTMLElement {
     } else if (tab === "updates") {
       pills = `<span class="pill" style="--c:${d.update.available ? "var(--rm-info)" : "var(--rm-success)"}">${esc(this._t(d.update.available ? "update_available" : "update_current"))}</span>`;
     } else if (tab === "storage") {
-      pills = `<span class="pill">${esc(d.storage.value ?? this._t("unknown"))}${d.storage.unit ? ` ${esc(d.storage.unit)}` : ""}</span>`;
+      const st = d.storage;
+      if (st.value != null) pills = `<span class="pill">${esc(st.value)}${st.unit ? ` ${esc(st.unit)}` : ""}</span>`;
+      else if (st.disabled) {
+        pills = this._canWrite() && this._exp("controls")
+          ? `<button class="pill btnp" style="--c:var(--rm-warning)" data-act="enablestorage" data-dev="${esc(d.device)}">${esc(this._t("storage_enable"))}</button>`
+          : `<span class="pill" style="--c:var(--rm-warning)">${esc(this._t("storage_disabled"))}</span>`;
+      } else if (!st.entity) pills = `<span class="pill">${esc(this._t("storage_none"))}</span>`;
+      else pills = `<span class="pill">${esc(this._t("unknown"))}</span>`;
     } else if (tab === "controls") {
       const labels = { privacy: "ctl_privacy", record: "ctl_record", push: "ctl_push" };
       pills = Object.entries(d.controls).map(([role, x]) => {
@@ -980,13 +1083,14 @@ class ReolinkManagerCard extends HTMLElement {
     const id = this._ui.popup;
     const d = id && this._device(id);
     if (!d) {
-      if (this._elPop.firstChild) { this._elPop.textContent = ""; this._popLast = ""; this._destroyLive(); }
+      if (this._elPop.firstChild) { this._elPop.textContent = ""; this._popLast = ""; this._ptzLast = ""; this._destroyLive(); }
       return;
     }
     if (this._elPop.dataset.dev !== id || !this._elPop.firstChild) {
       this._elPop.dataset.dev = id;
       this._popLast = "";
-      this._elPop.innerHTML = `<div class="backdrop" data-act="backdrop"><div class="popup" role="dialog"><div class="phead"><span class="ptitle"></span><span class="t"></span><button class="btn icon" data-act="close" title="×">${this._ico("mdi:close")}</button></div><div class="pbody" id="pbody"><div id="livewrap"></div><div id="pdyn"></div></div></div></div>`;
+      this._ptzLast = "";
+      this._elPop.innerHTML = `<div class="backdrop" data-act="backdrop"><div class="popup" role="dialog"><div class="phead"><span class="ptitle"></span><span class="t"></span><button class="btn icon" data-act="close" title="×">${this._ico("mdi:close")}</button></div><div class="pbody" id="pbody"><div id="livewrap"></div><div id="ptzwrap"></div><div id="pdyn"></div></div></div></div>`;
       this._buildLive(d);
     }
     const head = `${this._ico(KIND_ICON[d.kind] || "mdi:cctv")}`;
@@ -994,6 +1098,11 @@ class ReolinkManagerCard extends HTMLElement {
     if (ptitle.innerHTML !== head) ptitle.innerHTML = head;
     const t = this._elPop.querySelector(".phead .t");
     if (t.textContent !== d.name) t.textContent = d.name;
+    const ptz = this._canWrite() && this._exp("ptz") && d.ptz ? `<div class="ptzpanel">${this._ptzHtml(d)}</div>` : "";
+    if (ptz !== this._ptzLast) {
+      this._ptzLast = ptz;
+      this._elPop.querySelector("#ptzwrap").innerHTML = ptz;
+    }
     const html = this._popupBodyHtml(d);
     if (html !== this._popLast) {
       this._popLast = html;
@@ -1012,6 +1121,10 @@ class ReolinkManagerCard extends HTMLElement {
     const t = (k, v) => this._t(k, v);
     const det = this._ui.details[d.device];
     let h = "";
+    if (this._exp("gallery") && d.gallery) {
+      const g = this._ui.gal[d.device];
+      h += this._acc("p:gal", "mdi:filmstrip", t("tab_gallery"), this._galBodyHtml(d), { meta: g && g.items ? esc(t("gal_count", { n: g.items.length })) : "" });
+    }
     const sleepTxt = d.sleeping == null ? t("unknown") : t(d.sleeping ? "sleeping" : "awake");
     let info = this._line(t("info_model"), esc(d.model || "–")) + this._line(t("info_kind"), esc(t(`kind_${d.kind}`)));
     if (d.hub) info += this._line(t("info_hub"), esc(d.hub));
@@ -1029,14 +1142,8 @@ class ReolinkManagerCard extends HTMLElement {
         d.detections.map((x) => this._line(t(`det_${x.kind}`), `<span class="pill" style="--c:${x.on ? "var(--rm-warning)" : "var(--rm-rowicon)"}">${esc(t(x.on ? "det_active" : "det_idle"))}</span> ${this._ts(x.changed)}`)).join(""),
         { meta: d.detecting.length ? esc(String(d.detecting.length)) : "" });
     }
-    if (d.update) {
-      h += this._acc("p:upd", "mdi:update", t("acc_update"),
-        this._line(t("update_current"), esc(d.update.installed ?? "?")) + (d.update.available ? this._line(t("update_available"), esc(d.update.latest ?? "?")) : ""),
-        { variant: d.update.available ? "update" : "" });
-    }
 
     const writable = this._canWrite();
-    if (writable && this._exp("ptz") && d.ptz) h += this._acc("p:ptz", "mdi:pan", t("acc_ptz"), this._ptzHtml(d), { open: true });
     if (writable && this._exp("controls")) h += this._controlsHtml(d, det);
     if (writable && this._exp("refresh") && d.refreshable) {
       const confirm = this._ui.confirm === `refresh:${d.device}`;
@@ -1049,6 +1156,13 @@ class ReolinkManagerCard extends HTMLElement {
     else if (!det) ents = `<div class="note">${esc(t("loading"))}</div>`;
     else ents = det.entities.map((e) => `<div class="ent"><span class="n" data-act="more" data-ent="${esc(e.entity)}" title="${esc(e.entity)}">${esc(e.name)}</span><span class="r">${esc(e.role === "other" || e.role.endsWith("_other") ? t("role_unclassified") : e.role)}</span><span>${esc(e.state ?? "–")}${e.unit ? ` ${esc(e.unit)}` : ""}</span><button class="btn small icon" data-act="copy" data-copy="${esc(e.entity)}" title="${esc(t("copy"))}">${this._ico("mdi:content-copy")}</button></div>`).join("");
     h += this._acc("p:ents", "mdi:format-list-bulleted", t("acc_entities"), ents, { meta: det ? String(det.entities.length) : "" });
+
+    // Firmware ganz am Ende
+    if (d.update) {
+      h += this._acc("p:upd", "mdi:update", t("acc_update"),
+        this._line(t("update_current"), esc(d.update.installed ?? "?")) + (d.update.available ? this._line(t("update_available"), esc(d.update.latest ?? "?")) : ""),
+        { variant: d.update.available ? "update" : "" });
+    }
     return h;
   }
 
@@ -1064,7 +1178,8 @@ class ReolinkManagerCard extends HTMLElement {
     wrap.appendChild(node);
     this._live = { dev: d.device, entity: d.live.entity, mode: "idle", node, box: node.querySelector(".livebox"), card: null, seq: 0 };
     if (this._pendingStream) { this._pendingStream = false; this._liveStream(); }
-    else if (this._config.live_auto !== false) this._liveStill();
+    else if (this._config.live_auto !== false && !this._skipAutoLive) this._liveStill();
+    this._skipAutoLive = false;
   }
 
   _destroyLive() {
@@ -1168,21 +1283,47 @@ class ReolinkManagerCard extends HTMLElement {
     if (this._live && this._live.mode !== "stream") this._liveStream();
   }
 
-  /* ---------- Deep-Link aus der Push-Nachricht: ?reolink_live=<Geräte-ID> ---------- */
+  /* ---------- Deep-Link aus der Push-Nachricht: ?reolink_live=<Geräte-ID>&reolink_t=<Zeitpunkt> ---------- */
   _checkDeepLink() {
     if (!this._data || !this._config) return;
     let dev = null;
-    try { dev = new URLSearchParams(window.location.search).get("reolink_live"); } catch (_) { return; }
-    if (!dev || dev === this._deepDone) return;
+    let ts = 0;
+    try {
+      const q = new URLSearchParams(window.location.search);
+      dev = q.get("reolink_live");
+      ts = Number(q.get("reolink_t")) || 0;
+    } catch (_) { return; }
+    const key = `${dev}:${ts}`;
+    if (!dev || key === this._deepDone) return;
     const d = this._device(dev);
-    if (!d || !d.live) return;
-    this._deepDone = dev;
+    if (!d || !(d.live || d.gallery)) return;
+    this._deepDone = key;
     try {
       const u = new URL(window.location.href);
       u.searchParams.delete("reolink_live");
+      u.searchParams.delete("reolink_t");
       window.history.replaceState(window.history.state, "", u.pathname + u.search + u.hash);
     } catch (_) { /* ignorieren */ }
-    this._openPopup(dev, { stream: true });
+    const age = ts ? Date.now() / 1000 - ts : 0;
+    if (ts && age > DEEP_LIVE_MAX_AGE && d.gallery) this._openRecording(dev, ts);
+    else this._openPopup(dev, { stream: !!d.live });
+  }
+
+  /* Spätes Antippen der Push-Nachricht: die zur Meldung passende Aufnahme direkt abspielen */
+  async _openRecording(dev, ts) {
+    this._skipAutoLive = true;
+    this._pendingStream = false;
+    this._ui.acc["p:gal"] = true;
+    this._ui.popup = dev;
+    this._ui.detailsErr = null;
+    this._render();
+    this._loadDetails(dev, true);
+    await this._loadGallery(dev, true);
+    const g = this._ui.gal[dev];
+    const d = this._device(dev);
+    const it = g && g.items ? g.items.find((x) => x.start != null && x.start <= ts + 30 && ts - x.start < 6 * 3600) : null;
+    if (it && d) this._openPlayer(it.id, `${d.name} ${it.day} ${it.title}`);
+    else this._showToast(this._t("gal_deep_none"), false);
   }
 
   /* ---------- Galerie ---------- */
@@ -1194,19 +1335,25 @@ class ReolinkManagerCard extends HTMLElement {
     let h = `<div class="settings" data-scroll="list"><div class="note">${esc(t("gal_limit", { n }))}</div>`;
     for (const d of list) {
       const g = this._ui.gal[d.device];
-      let body = "";
-      if (!g) body = `<div class="note">${esc(t("gal_open_hint"))}</div>`;
-      else if (g.loading) body = `<div class="note">${esc(t("gal_loading"))}</div>`;
-      else if (g.error) body = `<div class="note err">${esc(t("gal_error", { e: this._errText(g.error) }))}</div><div class="btns"><button class="btn small" data-act="galreload" data-dev="${esc(d.device)}">${this._ico("mdi:refresh")}${esc(t("gal_reload"))}</button></div>`;
-      else {
-        body = this._gallerySnapshotHtml(d, g);
-        body += g.items.length ? g.items.map((it) => this._galleryRowHtml(d, it)).join("") : `<div class="note">${esc(t("gal_empty"))}</div>`;
-        if (g.items.length && !g.items.some((it) => it.thumbUrl)) body += `<div class="note">${esc(t("gal_no_thumb"))}</div>`;
-        body += `<div class="btns"><button class="btn small" data-act="galreload" data-dev="${esc(d.device)}">${this._ico("mdi:refresh")}${esc(t("gal_reload"))}</button></div>`;
-      }
-      h += this._acc(`g:${d.device}`, "mdi:filmstrip", d.name, body, { meta: g && g.items ? esc(t("gal_count", { n: g.items.length })) : "" });
+      h += this._acc(`g:${d.device}`, "mdi:filmstrip", d.name, this._galBodyHtml(d), { meta: g && g.items ? esc(t("gal_count", { n: g.items.length })) : "" });
     }
     return `${h}</div>`;
+  }
+
+  _galBodyHtml(d) {
+    const t = (k, v) => this._t(k, v);
+    const g = this._ui.gal[d.device];
+    let body = "";
+    if (!g) body = `<div class="note">${esc(t("gal_open_hint"))}</div>`;
+    else if (g.loading) body = `<div class="note">${esc(t("gal_loading"))}</div>`;
+    else if (g.error) body = `<div class="note err">${esc(t("gal_error", { e: this._errText(g.error) }))}</div><div class="btns"><button class="btn small" data-act="galreload" data-dev="${esc(d.device)}">${this._ico("mdi:refresh")}${esc(t("gal_reload"))}</button></div>`;
+    else {
+      body = this._gallerySnapshotHtml(d, g);
+      body += g.items.length ? g.items.map((it) => this._galleryRowHtml(d, it)).join("") : `<div class="note">${esc(t("gal_empty"))}</div>`;
+      if (g.items.length && !g.items.some((it) => it.thumbUrl)) body += `<div class="note">${esc(t("gal_no_thumb"))}</div>`;
+      body += `<div class="btns"><button class="btn small" data-act="galreload" data-dev="${esc(d.device)}">${this._ico("mdi:refresh")}${esc(t("gal_reload"))}</button></div>`;
+    }
+    return body;
   }
 
   _gallerySnapshotHtml(d, g) {
@@ -1218,7 +1365,8 @@ class ReolinkManagerCard extends HTMLElement {
 
   _galleryRowHtml(d, it) {
     const thumb = it.thumbUrl ? `<img src="${esc(it.thumbUrl)}" alt="">` : this._ico("mdi:play-circle-outline");
-    return `<div class="galrow" data-act="play" data-id="${esc(it.id)}" data-title="${esc(d.name)} ${esc(it.day)} ${esc(it.title)}"><div class="galthumb">${thumb}</div><div class="main"><div class="name">${esc(it.title)}</div><div class="sub">${esc(it.day)}</div></div>${this._ico("mdi:chevron-right")}</div>`;
+    const dl = `<button class="btn small icon" data-act="dl" data-dev="${esc(d.device)}" data-day="${esc(it.day)}" data-title="${esc(it.title)}" title="${esc(this._t("gal_download"))}">${this._ico("mdi:download")}</button>`;
+    return `<div class="galrow" data-act="play" data-id="${esc(it.id)}" data-title="${esc(d.name)} ${esc(it.day)} ${esc(it.title)}"><div class="galthumb">${thumb}</div><div class="main"><div class="name">${esc(it.title)}</div><div class="sub">${esc(it.day)}</div></div>${dl}${this._ico("mdi:chevron-right")}</div>`;
   }
 
   async _loadGallery(dev, force) {
@@ -1254,6 +1402,33 @@ class ReolinkManagerCard extends HTMLElement {
     if (!d || !g || !d.gallery) return;
     try { g.snapshot = await this._stillUrl(d.gallery.entity); } catch (_) { /* ohne Bild */ }
     this._render();
+  }
+
+  async _download(dev, day, title) {
+    const d = this._device(dev);
+    this._showToast(this._t("gal_dl_busy"), false);
+    try {
+      const msg = { type: `${WS}/download`, device: dev, day, title };
+      if (this._config.entry_id) msg.entry_id = this._config.entry_id;
+      const res = await this._hass.callWS(msg);
+      const name = `${String((d && d.name) || "reolink").replace(/[^\w\-]+/g, "_")}_${day}_${String(title).split(" ")[0].replace(/:/g, "-")}.mp4`;
+      if (!res.downloadable) {
+        this._showToast(this._t("gal_dl_hls"), false);
+        this._openPlayer(res.id, `${(d && d.name) || ""} ${day} ${res.title} HD`);
+        return;
+      }
+      const a = document.createElement("a");
+      a.href = typeof this._hass.hassUrl === "function" ? this._hass.hassUrl(res.url) : res.url;
+      a.download = name;
+      a.rel = "noopener";
+      this.shadowRoot.appendChild(a);
+      a.click();
+      a.remove();
+      this._showToast(this._t("gal_dl_started"), false);
+    } catch (e) {
+      const code = e && e.code === "unauthorized" ? "no_admin" : (e && (e.code || e.message)) || "download_failed";
+      this._showToast(this._t("resp_error", { e: this._errText(code) }), true);
+    }
   }
 
   async _openPlayer(id, title) {
@@ -1297,14 +1472,12 @@ class ReolinkManagerCard extends HTMLElement {
     const btn = (key, icon, label) => (b[key] ? `<button class="btn ptz" data-ptz="${esc(b[key])}" title="${esc(label)}">${this._ico(icon)}</button>` : `<button class="btn" disabled>${this._ico(icon)}</button>`);
     const stop = b.stop ? `<button class="btn" data-act="ptzstop" data-ent="${esc(b.stop)}" title="${esc(t("ptz_stop"))}">${this._ico("mdi:stop")}</button>` : `<button class="btn" disabled>${this._ico("mdi:stop")}</button>`;
     const cur = this._ptzSpeedKey();
-    let h = `<div class="settings-line"><span class="lbl">${esc(t("ptz_speed"))}</span><select class="sel" style="max-width:55%" data-role="ptzspeed">${Object.keys(PTZ_SPEEDS).map((k) => `<option value="${k}"${k === cur ? " selected" : ""}>${esc(t(`ptz_speed_${k}`))}</option>`).join("")}</select></div>`;
-    h += `<div class="pad"><span></span>${btn("up", "mdi:arrow-up", "↑")}<span></span>${btn("left", "mdi:arrow-left", "←")}${stop}${btn("right", "mdi:arrow-right", "→")}<span></span>${btn("down", "mdi:arrow-down", "↓")}<span></span></div>`;
-    if (b.zoom_in || b.zoom_out) h += `<div class="btns" style="justify-content:center">${btn("zoom_out", "mdi:magnify-minus-outline", t("ptz_zoom_out"))}${btn("zoom_in", "mdi:magnify-plus-outline", t("ptz_zoom_in"))}</div>`;
-    h += `<div class="note">${esc(t("ptz_hint"))}</div>`;
+    let side = `<label class="ptzlbl">${esc(t("ptz_speed"))}<select class="sel" data-role="ptzspeed">${Object.keys(PTZ_SPEEDS).map((k) => `<option value="${k}"${k === cur ? " selected" : ""}>${esc(t(`ptz_speed_${k}`))}</option>`).join("")}</select></label>`;
+    if (b.zoom_in || b.zoom_out) side += `<div class="btns" style="margin-top:0">${btn("zoom_out", "mdi:magnify-minus-outline", t("ptz_zoom_out"))}${btn("zoom_in", "mdi:magnify-plus-outline", t("ptz_zoom_in"))}</div>`;
     if (d.ptz.preset) {
-      h += `<div class="settings-line"><span class="lbl">${esc(t("ptz_preset"))}</span><select class="sel" data-role="select" data-ent="${esc(d.ptz.preset.entity)}">${d.ptz.preset.options.map((o) => `<option${o === d.ptz.preset.current ? " selected" : ""}>${esc(o)}</option>`).join("")}</select></div>`;
+      side += `<label class="ptzlbl">${esc(t("ptz_preset"))}<select class="sel" data-role="select" data-ent="${esc(d.ptz.preset.entity)}">${d.ptz.preset.options.map((o) => `<option${o === d.ptz.preset.current ? " selected" : ""}>${esc(o)}</option>`).join("")}</select></label>`;
     }
-    return h;
+    return `<div class="ptzrow"><div class="pad"><span></span>${btn("up", "mdi:arrow-up", "↑")}<span></span>${btn("left", "mdi:arrow-left", "←")}${stop}${btn("right", "mdi:arrow-right", "→")}<span></span>${btn("down", "mdi:arrow-down", "↓")}<span></span></div><div class="ptzside">${side}</div></div><div class="note">${esc(t("ptz_hint"))}</div>`;
   }
 
   /* Bewegung nur solange gehalten wird, Loslassen stoppt (Sicherheits-Stopp zusätzlich im Backend) */
@@ -1356,6 +1529,7 @@ class ReolinkManagerCard extends HTMLElement {
     if (!el || el.tagName !== "DETAILS" || !el.dataset.k) return;
     this._ui.acc[el.dataset.k] = el.open;
     if (el.open && el.dataset.k.startsWith("g:")) this._loadGallery(el.dataset.k.slice(2), false);
+    else if (el.open && el.dataset.k === "p:gal" && this._ui.popup) this._loadGallery(this._ui.popup, false);
   }
 
   _onInput(e) {
@@ -1395,6 +1569,8 @@ class ReolinkManagerCard extends HTMLElement {
       case "livestream": this._liveToggleStream(); break;
       case "galreload": this._loadGallery(el.dataset.dev, true); break;
       case "galsnap": this._loadGallerySnapshot(el.dataset.dev); break;
+      case "dl": this._download(el.dataset.dev, el.dataset.day, el.dataset.title); break;
+      case "enablestorage": this._action({ action: "enable_storage", device: el.dataset.dev }); break;
       case "play": this._openPlayer(el.dataset.id, el.dataset.title); break;
       case "testpush": this._action({ action: "test_push" }); this._showToast(this._t("push_test_sent"), false); break;
       case "ptzstop": this._action({ action: "ptz", entity: el.dataset.ent, op: "stop" }); this._livePtzHook(); break;
@@ -1519,6 +1695,8 @@ class ReolinkManagerCardEditor extends HTMLElement {
     return [
       { name: "title", selector: { text: {} } },
       { name: "show_title", selector: { boolean: {} } },
+      { name: "show_icon", selector: { boolean: {} } },
+      { name: "icon", selector: { icon: {} } },
       { name: "entry_id", selector: { text: {} } },
       { type: "expandable", name: "", title: t("ed_group_categories"), expanded: true, flatten: true, schema: [
         ...catSwitches,
@@ -1552,7 +1730,7 @@ class ReolinkManagerCardEditor extends HTMLElement {
     const m = name.match(/^show_(.+)$/);
     if (m && TAB_META[m[1]]) return t("ed_show_cat", { c: t(TAB_META[m[1]].label) });
     const map = {
-      title: "ed_title", show_title: "ed_show_title", entry_id: "ed_entry_id", default_tab: "ed_default_tab",
+      title: "ed_title", show_title: "ed_show_title", show_icon: "ed_show_icon", icon: "ed_icon", entry_id: "ed_entry_id", default_tab: "ed_default_tab",
       max_rows: "ed_max_rows", zoom: "ed_zoom", show_stats: "ed_show_stats", show_search: "ed_show_search",
       show_filter_bar: "ed_show_filter_bar", default_sort: "ed_default_sort", show_col_model: "ed_col_model",
       show_col_hub: "ed_col_hub", show_col_battery: "ed_col_battery", show_col_wifi: "ed_col_wifi", show_col_last: "ed_col_last",

@@ -37,6 +37,7 @@
         "title": "Reolink Manager",
         "description": "Installierte Version: {version}\n{update_info}",
         "data": {
+          "reolink_entries": "Reolink-Einträge (Hubs, NVRs, Kameras)",
           "devices": "Kameras und Geräte",
           "detection_types": "Angezeigte Erkennungsarten",
           "battery_low": "Batterie niedrig ab (%)",
@@ -46,6 +47,7 @@
           "experimental_enabled": "Experimentelle Funktionen anzeigen"
         },
         "data_description": {
+          "reolink_entries": "Hier lassen sich falsch gewählte Einträge (erkennbar an der IP-Adresse) wieder abwählen. Abgewählte Geräte verschwinden aus der Karte. Mindestens ein Eintrag.",
           "devices": "Leer lassen, um alle Geräte der gewählten Reolink-Einträge zu verwalten.",
           "detection_types": "Nur diese Erkennungen erscheinen in der Karte.",
           "battery_low": "Ab diesem Stand gilt die Batterie als niedrig.",
@@ -69,7 +71,8 @@
       }
     },
     "error": {
-      "critical_above_low": "„Kritisch“ darf nicht höher sein als „niedrig“."
+      "critical_above_low": "„Kritisch“ darf nicht höher sein als „niedrig“.",
+      "no_selection": "Wähle mindestens einen Reolink-Eintrag."
     }
   },
   "selector": {

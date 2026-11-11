@@ -1,10 +1,10 @@
-# SHA256 (Inhalt ab Zeile 2, d.h. dieser Datei ohne diese erste Zeile): 7fc0bee1e47ce683fb0124e0e7e302b12faa0afc485cd6423ac70e7acc5c18ce
+# SHA256 (Inhalt ab Zeile 2, d.h. dieser Datei ohne diese erste Zeile): 0e43327ae54bbeaec6c1fb4696199aa653f81e5ebff1e3170b1f8f2f721cac2d
 """Konstanten des Reolink Managers."""
 from __future__ import annotations
 
 DOMAIN = "reolink_manager"
 NAME = "Reolink Manager"
-VERSION = "0.0.3"
+VERSION = "0.0.4"
 GITHUB_REPO = "meine-smarte-welt/reolink_manager"
 GITHUB_URL = f"https://github.com/{GITHUB_REPO}"
 REOLINK_DOMAIN = "reolink"

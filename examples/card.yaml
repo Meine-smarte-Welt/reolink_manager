@@ -1,9 +1,11 @@
-# SHA256 (Inhalt ab Zeile 2, d.h. dieser Datei ohne diese erste Zeile): 61f2503409dce478f0fa13e9f637573d139d1911097ad45142cc19b6937bf14c
+# SHA256 (Inhalt ab Zeile 2, d.h. dieser Datei ohne diese erste Zeile): 9aeae9bcef539f96c2e073b47baeb067ec28b3a3fcd952049ececca70dbb5692
 # Beispiel: Karte mit Standardwerten. Experimentelle Funktionen müssen zusätzlich
 # in den Optionen der Integration eingeschaltet sein (siehe EXPERIMENTELL.md).
 type: custom:reolink-manager-card
 title: Reolink Manager
 show_experimental: true
+show_icon: true        # Icon vor dem Titel (false = ausblenden)
+icon: ""              # leer = Reolink-Logo, sonst z. B. mdi:cctv oder reolink_manager:logo
 default_tab: cameras
 zoom: 100
 max_rows: 50

@@ -37,6 +37,7 @@
         "title": "Reolink Manager",
         "description": "Installed version: {version}\n{update_info}",
         "data": {
+          "reolink_entries": "Reolink entries (hubs, NVRs, cameras)",
           "devices": "Cameras and devices",
           "detection_types": "Detection types shown",
           "battery_low": "Battery low from (%)",
@@ -46,6 +47,7 @@
           "experimental_enabled": "Show experimental features"
         },
         "data_description": {
+          "reolink_entries": "Deselect wrongly chosen entries here (recognisable by the IP address). Deselected devices disappear from the card. At least one entry.",
           "devices": "Leave empty to manage all devices of the selected Reolink entries.",
           "detection_types": "Only these detections appear in the card.",
           "battery_low": "From this level the battery counts as low.",
@@ -69,7 +71,8 @@
       }
     },
     "error": {
-      "critical_above_low": "\"Critical\" must not be higher than \"low\"."
+      "critical_above_low": "\"Critical\" must not be higher than \"low\".",
+      "no_selection": "Select at least one Reolink entry."
     }
   },
   "selector": {
